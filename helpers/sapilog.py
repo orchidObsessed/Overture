@@ -25,7 +25,7 @@ MVFLAGS = {0: "<FAIL>",
            4: "<DBUG>"}
 
 # Printer vars
-vtalk = 4 # Highest verbosity level to print at
+vtalk = 3 # Highest verbosity level to print at
 mono = False # Whether to print using color (written logs never use color)
 
 # Logger vars
@@ -158,6 +158,7 @@ def _logBox(m):
     log(4, "\t\t"+m)
     log(4, "\t\t+--------------------+")
     return
+
 # ===== < EXCEPTIONS > =====
 class SapiException(Exception):
     """
