@@ -29,7 +29,8 @@ if __name__ == "__main__":
     test_network = nn.NNetwork()
     test_network += l.Layer(2, alg.sigmoid, alg.q_sigmoid)
     test_network += l.Layer(3, alg.sigmoid, alg.q_sigmoid)
+    test_network += l.Layer(4, alg.sigmoid, alg.q_sigmoid)
     test_network += l.Layer(1, alg.sigmoid, alg.q_sigmoid)
 
     # Train test network
-    test_network.train(train_data, label_data, alg.mse, alg.q_mse, 0, 1)
+    test_network.train(train_data, label_data, alg.mse, alg.q_mse, 0, 1500, report_freq=100)
