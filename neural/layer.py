@@ -11,7 +11,7 @@ class Layer:
     """
     def __init__(self, size: int, a_func: callable, q_a_func: callable):
         self._size = size
-        self._b = np.zeros((size, 1)) # Sad that this needs to be mat instead of vec
+        self.b = np.zeros((size, 1)) # Sad that this needs to be mat instead of vec
         self._a_func = a_func
         self._q_a_func = q_a_func
         self.z, self.a = None, None
@@ -28,10 +28,8 @@ class Layer:
         `w` : np.array
             Weights between previous layer and here as a NumPy ndarray of floats.
         """
-        sl.log(4, f"Calculating activation with input {x} and weight matrix {w}")
-        self.z = w.T @ x + self._b
+        self.z = w.T @ x + self.b
         self.a = self._a_func(self.z)
-        sl.log(4, f"Created z={self.z} and a={self.a}")
         return self.a
 
     def q_activation(self):
@@ -41,7 +39,6 @@ class Layer:
         if not self.z:
             sl.log(0, "Called before z value calculated")
             raise sl.SapiException()
-        sl.log(4, f"Returning a_del_z with z={self.z}")
         return self._q_a_func(self.z)
 
     def __len__(self):
