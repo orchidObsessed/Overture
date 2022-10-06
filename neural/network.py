@@ -1,12 +1,11 @@
 # ===== < INFO > =====
-# +----------------+
-# | |
-# +----------------+
+
 # ===== < IMPORTS & CONSTANTS > =====
 from helpers import sapilog as sl
 from neural import layer
 import numpy as np
 from random import randint
+
 # ===== < BODY > =====
 class NNetwork:
     """
@@ -61,11 +60,13 @@ class NNetwork:
             How many epochs before a report is generated
         """
         # Step 0: Set up local variables and log
+        avg_loss = 0
         sl.log(3, f"Beginning training with {len(train_data)} samples over {n_epochs} epochs, using batch size {batch_size} and a learning rate of {learning_rate}")
 
         # Step 1: Main training loop
         for e in range(n_epochs):
-            if e % report_freq == 0: print(f"Epoch {e}")
+            if e % report_freq == 0 and e != 0:
+                print(f"{e}/{n_epochs} | [" + "="*int(e/report_freq) + ">" + " "*(int(n_epochs / report_freq) - int(e/report_freq)) + "]", end='\r')
 
             batch_w_grad, batch_b_grad = [np.zeros_like(w) for w in self._weights], [np.zeros_like(l.b) for l in self._raw_layers[1:]]
 
@@ -81,6 +82,7 @@ class NNetwork:
 
                 # Step 1c: Get the loss of the evaluation for this sample
                 loss = c_func(activations[-1], y)
+                avg_loss += loss
 
                 # Step 1d: Calculate gradient for output layer
                 sample_w_grad, sample_b_grad = [], []
@@ -118,16 +120,7 @@ class NNetwork:
 
 
         # Step 2: Report accuracy
-        n_correct = 0
-        for i in range(50):
-            sample_index = randint(0, len(train_data)-1)
-            x, y = train_data[sample_index], label_data[sample_index]
-
-            guess = self.feedforward(x)
-            if c_func(guess, y) < 0.1: n_correct += 1
-            else: print(f"Incorrect: {x} -> {y}, evaluation: {guess}")
-
-        sl.log(3, f"{n_correct} out of 50 samples evaluated successfully")
+        print(f"{n_epochs}/{n_epochs} | [" + "="*(int(n_epochs / report_freq)+1) + f"] | Average loss per epoch: {avg_loss/n_epochs}")
 
         return
 
@@ -158,6 +151,21 @@ class NNetwork:
         sl.log(4, f"Biases: {[l.b for l in self._raw_layers]}")
         sl.log(4, f"Weights: {self._weights}")
         return
+
+    def evaluate(self, val_data: list[np.array], label_data: list[np.array], c_func: callable, threshold: float = 0.1) -> float:
+        """
+        Return the accuracy of the network over a labeled validation set.
+        """
+        n_correct = 0
+
+        for x, y in zip(val_data, label_data):
+            guess = self.feedforward(x)
+            if c_func(guess, y) <= threshold: n_correct += 1
+            else: sl.log(1, f"Misevaluated {x} -> {y} as {guess}")
+
+        sl.log(3, f"{n_correct} out of {len(label_data)} samples were within cost threshold {threshold}, for a total accuracy of {n_correct/len(label_data)}")
+
+        return n_correct/len(label_data)
 
 # ===== < HELPERS > =====
 
