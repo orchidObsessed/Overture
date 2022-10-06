@@ -31,5 +31,5 @@ if __name__ == "__main__":
 
     # Train test network
     test_network.tell_params()
-    test_network.train(train_data, label_data, alg.mse, alg.q_mse, 50, 100, report_freq=50)
+    test_network.train(train_data, label_data, alg.mse, alg.q_mse, 50, 100, report_freq=25)
     test_network.tell_params()
