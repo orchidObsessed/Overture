@@ -7,18 +7,15 @@ from helpers import algebra as alg
 from neural import layer as l
 from neural import network as nn
 import numpy as np
+
+sl.vtalk = 3
+sl.vwrite = 4
 # ===== < BODY > =====
 
 # ===== < HELPERS > =====
 
 # ===== < MAIN > =====
 if __name__ == "__main__":
-    # Test some stuff
-    # print(alg.sigmoid(np.array([-5, 100, 0])))
-    # print(alg.q_sigmoid(np.array([-5, 100, 0])))
-    # print(alg.mse(np.array([0, 0, 0]), np.array([0, 1, 0])))
-    # print(alg.q_mse(np.array([0, 0, 0]), np.array([0, 1, 0])))
-
     # Read and format test data
     fold1, fold2, fold3 = datagen.collectData("d3&c25&s200")
     train_data, label_data = list(fold1.keys()), list(fold1.values())
@@ -33,4 +30,6 @@ if __name__ == "__main__":
     test_network += l.Layer(1, alg.sigmoid, alg.q_sigmoid)
 
     # Train test network
-    test_network.train(train_data, label_data, alg.mse, alg.q_mse, 0, 1500, report_freq=100)
+    test_network.tell_params()
+    test_network.train(train_data, label_data, alg.mse, alg.q_mse, 50, 100, report_freq=50)
+    test_network.tell_params()
