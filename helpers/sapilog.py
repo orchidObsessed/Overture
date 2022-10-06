@@ -25,7 +25,7 @@ MVFLAGS = {0: "<FAIL>",
            4: "<DBUG>"}
 
 # Printer vars
-vtalk = 3 # Highest verbosity level to print at
+vtalk = 2 # Highest verbosity level to print at
 mono = False # Whether to print using color (written logs never use color)
 
 # Logger vars
