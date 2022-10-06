@@ -34,6 +34,16 @@ class Layer:
         sl.log(4, f"Created z={self.z} and a={self.a}")
         return self.a
 
+    def q_activation(self):
+        """
+        Return the derivative of the activation function with most recent weighted input.
+        """
+        if not self.z:
+            sl.log(0, "Called before z value calculated")
+            raise sl.SapiException()
+        sl.log(4, f"Returning a_del_z with z={self.z}")
+        return self._q_a_func(self.z)
+
     def __len__(self):
         return self._size
 
