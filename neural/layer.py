@@ -51,14 +51,18 @@ class Flatten(Layer):
     """
     def __init__(self, size: int, dim: tuple[int]):
         self._indim = dim
+        self.b = None
         self._outdim = (size, 1)
         self._size = size
+        self.a = None
 
     def activation(self, x: np.array) -> np.array:
         """
         Reshapes (if necessary) and returns the passed array (or array-like) object.
         """
-        try: return np.array(x).reshape(self._outdim)
+        try:
+            self.a = np.array(x).reshape(self._outdim)
+            return self.a
         except ValueError as e:
             sl.log(0, f"Cannot reshape input {x} of dimension {x.shape} to {self._outdim}")
             raise sl.sapiDumpOnExit()
