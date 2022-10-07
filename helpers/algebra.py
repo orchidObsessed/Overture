@@ -3,6 +3,7 @@
 # ===== < IMPORTS & CONSTANTS > =====
 import numpy as np
 # ===== < BODY > =====
+# Activation functions
 def identity(x):
     """
     Identity function.
@@ -19,15 +20,35 @@ def q_identity(x):
     """
     return np.ones_like(x)
 
+def tanh(x):
+    """
+    Hyperbolic tangent function.
+
+    Applies element-wise to the passed NumPy ndarray.
+    """
+    return np.tanh(x)
+
+def q_tanh(x):
+    """
+    Derivative of the hyperbolic tangent function.
+
+    Applies element-wise to the passed NumPy ndarray.
+    """
+    return 1 - tanh(x)**2
+
 def sigmoid(x):
     """
+    Sigmoid function.
 
+    Applies element-wise to the passed NumPy ndarray.
     """
     return 1 / (1 + np.exp(-x))
 
 def q_sigmoid(x):
     """
+    Derivative of the sigmoid function.
 
+    Applies element-wise to the passed NumPy ndarray.
     """
     return sigmoid(x) * (1 - sigmoid(x))
 
@@ -51,16 +72,16 @@ def q_relu(x):
 
 def mse(x, y):
     """
-
+    Mean squared error loss function.
     """
     return ((x - y) ** 2).mean(axis=0)
 
 def q_mse(x, y):
     """
-
+    Derivative of the mean squared error loss function.
     """
     return 2*(x-y)
 
 # ===== < MAIN > =====
 if __name__ == "__main__":
-    print(q_relu(np.array([[-1, 5, -3, 1]])))
+    pass
