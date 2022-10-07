@@ -78,8 +78,7 @@ class NNetwork:
 
                 # Step 1b: Feed forward, and retain activations and weighted inputs
                 self.feedforward(x)
-                activations, zs = [l.a for l in self._raw_layers[1:]], [l.z for l in self._raw_layers[1:]]
-                activations.insert(0, x)
+                activations, zs = [l.a for l in self._raw_layers], [l.z for l in self._raw_layers[1:]]
 
                 # Step 1c: Get the loss of the evaluation for this sample
                 loss = c_func(activations[-1], y)
@@ -159,12 +158,15 @@ class NNetwork:
         Return the accuracy of the network over a labeled validation set.
         """
         n_correct = 0
+        avg_cost = 0
 
         for x, y in zip(val_data, label_data):
             guess = self.feedforward(x)
-            if c_func(guess, y) <= threshold: n_correct += 1
+            cost = c_func(guess, y)
+            avg_cost += cost/len(val_data)
+            if cost <= threshold: n_correct += 1
 
-        sl.log(3, f"{n_correct} out of {len(label_data)} samples were within cost threshold {threshold}, for a total accuracy of {n_correct/len(label_data)}")
+        sl.log(3, f"{n_correct} out of {len(label_data)} samples were within cost threshold {threshold}, for a total accuracy of {n_correct/len(label_data)} and an average cost of {avg_cost}")
 
         return n_correct/len(label_data)
 
