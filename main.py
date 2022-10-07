@@ -20,7 +20,7 @@ if __name__ == "__main__":
     # Read and format test data
     fold1, fold2, fold3 = datagen.collectData("d3&c25&s200")
     train_data, label_data = list(fold1.keys()), list(fold1.values())
-    train_data = [np.array(x).reshape(2, 1) for x in train_data]
+    train_data = [np.array(x) for x in train_data] # .reshape(2, 1) on the array
     label_data = [np.array(x) for x in label_data]
 
     # Format validation data
