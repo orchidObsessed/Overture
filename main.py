@@ -30,14 +30,14 @@ if __name__ == "__main__":
 
     # Create network
     test_network = nn.NNetwork()
-    test_network += l.Layer(2, alg.sigmoid, alg.q_sigmoid)
-    # test_network += l.Layer(3, alg.sigmoid, alg.q_sigmoid)
+    test_network += l.Flatten(2, (1, 2))
+    test_network += l.Layer(3, alg.sigmoid, alg.q_sigmoid)
     test_network += l.Layer(1, alg.sigmoid, alg.q_sigmoid)
 
+    # print(test_network.feedforward([-2, 1]))
+
     # Train test network
-    test_network.tell_params()
-    test_network.train(train_data, label_data, alg.mse, alg.q_mse, 50, 1000, report_freq=25)
-    test_network.tell_params()
+    test_network.train(train_data, label_data, alg.mse, alg.q_mse, 50, 1000, report_freq=100)
 
     # Evaluate network
     test_network.evaluate(validata, valilabel, alg.mse)
