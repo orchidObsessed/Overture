@@ -36,6 +36,7 @@ class NNetwork:
         self._weights.append(w)
         return
 
+    @sl.sapiDumpOnExit
     def train(self, train_data: list[np.array], label_data: list[np.array], c_func: callable, q_c_func: callable, batch_size: int, n_epochs: int, learning_rate=0.1, report_freq=1):
         """
         Train the network using stochastic gradient descent.
@@ -120,7 +121,8 @@ class NNetwork:
 
 
         # Step 2: Report accuracy
-        print(f"{n_epochs}/{n_epochs} | [" + "="*(int(n_epochs / report_freq)+1) + f"] | Average loss per epoch: {avg_loss/n_epochs}")
+        print(f"{n_epochs}/{n_epochs} | [" + "="*(int(n_epochs / report_freq)+1) + "]")
+        sl.log(2, f"Training complete with an average loss per epoch: {avg_loss/n_epochs}")
 
         return
 
@@ -137,7 +139,7 @@ class NNetwork:
         """
         Feed a value through the network, and return the final layer's activation as a NumPy nx1 ndarray.
         """
-        a = x # Force input activation
+        a = self._raw_layers[0].activation(x) # Force input activation
         for l, w in zip(self._raw_layers[1:], self._weights):
             a = l.activation(a, w)
         return a
@@ -161,7 +163,6 @@ class NNetwork:
         for x, y in zip(val_data, label_data):
             guess = self.feedforward(x)
             if c_func(guess, y) <= threshold: n_correct += 1
-            else: sl.log(1, f"Misevaluated {x} -> {y} as {guess}")
 
         sl.log(3, f"{n_correct} out of {len(label_data)} samples were within cost threshold {threshold}, for a total accuracy of {n_correct/len(label_data)}")
 
