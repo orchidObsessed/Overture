@@ -15,6 +15,7 @@ class Layer:
         self._a_func = a_func
         self._q_a_func = q_a_func
         self.z, self.a = None, None
+        sl.log(3, f"{self.__class__.__name__} created")
         return
 
     def activation(self, x: np.array, w: np.array) -> np.array:
@@ -43,6 +44,24 @@ class Layer:
 
     def __len__(self):
         return self._size
+
+class Flatten(Layer):
+    """
+    Flattening layer; takes an input of a given dimension and reshapes it to a column vector
+    """
+    def __init__(self, size: int, dim: tuple[int]):
+        self._indim = dim
+        self._outdim = (size, 1)
+        self._size = size
+
+    def activation(self, x: np.array) -> np.array:
+        """
+        Reshapes (if necessary) and returns the passed array (or array-like) object.
+        """
+        try: return np.array(x).reshape(self._outdim)
+        except ValueError as e:
+            sl.log(0, f"Cannot reshape input {x} of dimension {x.shape} to {self._outdim}")
+            raise sl.sapiDumpOnExit()
 
 # ===== < HELPERS > =====
 
