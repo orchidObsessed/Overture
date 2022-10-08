@@ -7,7 +7,7 @@ import numpy as np
 # ===== < BODY > =====
 class Layer:
     """
-    Base layer class.
+    Base layer class. This is the same as a Dense layer (may be separated in future).
     """
     def __init__(self, size: int, a_func: callable, q_a_func: callable):
         self._size = size
