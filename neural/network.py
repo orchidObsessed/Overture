@@ -111,7 +111,7 @@ class NNetwork:
                 for b, db in zip(range(len(batch_b_grad)), sample_b_grad):
                     batch_b_grad[b] = batch_b_grad[b] + db
 
-            # Step 1g: Apply alongside learning rate to weights and biases
+            # Step 1g: Apply to weights and biases, using learning rate and averaging over batch
             for w, dw in zip(range(len(self._weights)), batch_w_grad):
                 self._weights[w] = self._weights[w] - dw * (learning_rate/batch_size)
 
