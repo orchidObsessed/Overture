@@ -2,6 +2,10 @@
 
 # ===== < IMPORTS & CONSTANTS > =====
 import numpy as np
+import warnings, inspect
+from helpers.logsuite import sapilog as sl
+
+warnings.filterwarnings("ignore")
 # ===== < BODY > =====
 # Activation functions
 def identity(x):
@@ -26,6 +30,11 @@ def tanh(x):
 
     Applies element-wise to the passed NumPy ndarray.
     """
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error")
+        try: return np.tanh(x)
+        except Warning as w:
+            sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
     return np.tanh(x)
 
 def q_tanh(x):
@@ -34,6 +43,11 @@ def q_tanh(x):
 
     Applies element-wise to the passed NumPy ndarray.
     """
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error")
+        try: return 1 - tanh(x)**2
+        except Warning as w:
+            sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
     return 1 - tanh(x)**2
 
 def sigmoid(x):
@@ -42,6 +56,11 @@ def sigmoid(x):
 
     Applies element-wise to the passed NumPy ndarray.
     """
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error")
+        try: return 1 / (1 + np.exp(-x))
+        except Warning as w:
+            sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
     return 1 / (1 + np.exp(-x))
 
 def q_sigmoid(x):
@@ -50,6 +69,11 @@ def q_sigmoid(x):
 
     Applies element-wise to the passed NumPy ndarray.
     """
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error")
+        try: return sigmoid(x) * (1 - sigmoid(x))
+        except Warning as w:
+            sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
     return sigmoid(x) * (1 - sigmoid(x))
 
 def relu(x):
@@ -58,6 +82,11 @@ def relu(x):
 
     Applies element-wise to the passed NumPy ndarray.
     """
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error")
+        try: return np.maximum(0, x)
+        except Warning as w:
+            sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
     return np.maximum(0, x)
 
 def q_relu(x):
@@ -74,13 +103,25 @@ def mse(x, y):
     """
     Mean squared error loss function.
     """
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error")
+        try: return ((x - y) ** 2).mean(axis=0)
+        except Warning as w:
+            sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
     return ((x - y) ** 2).mean(axis=0)
+
 
 def q_mse(x, y):
     """
     Derivative of the mean squared error loss function.
     """
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error")
+        try: return 2*(x-y)
+        except Warning as w:
+            sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
     return 2*(x-y)
+
 
 # ===== < MAIN > =====
 if __name__ == "__main__":
