@@ -64,9 +64,9 @@ def log(verbosity: int, message: int, stack: list = None):
 
     # Step 1: Stack trace for log header
     if stack:
-        caller_function = str(stack[1].function) # This will retrieve the function from which this was called
+        caller_function = str(stack[0].function) # This will retrieve the function from which this was called
         if caller_function == "<module>": caller_function = "__main__"
-        caller_location = str(stack[1].filename.split("\\")[-1]) # This will retrieve the module that contains that function
+        caller_location = str(stack[0].filename.split("\\")[-1]) # This will retrieve the module that contains that function
     else:
         # log(1, "Stack trace was not given; using filler", inspect.stack())
         caller_location, caller_function = "?.py", "?"
