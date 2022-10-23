@@ -5,7 +5,7 @@
 # Version     : a1.0
 # ===== < IMPORTS & CONSTANTS > =====
 from random import uniform, randint
-from helpers import sapilog as sl
+from helpers.logsuite import sapilog as sl
 
 OUTDIR = "data/" # Where to write the data to
 

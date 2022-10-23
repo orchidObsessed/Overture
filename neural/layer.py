@@ -1,7 +1,7 @@
 # ===== < INFO > =====
 
 # ===== < IMPORTS & CONSTANTS > =====
-from helpers import sapilog as sl
+from helpers.logsuite import sapilog as sl
 import numpy as np
 
 # ===== < BODY > =====

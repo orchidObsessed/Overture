@@ -5,7 +5,7 @@
 # ===== < IMPORTS & CONSTANTS > =====
 import inspect, os, functools, sys, threading
 from time import strftime, sleep
-from logsuite import velocius as vl
+from helpers.logsuite import velocius as vl
 
 # Formatting constants
 COLOR = {"RED":"\033[31m",

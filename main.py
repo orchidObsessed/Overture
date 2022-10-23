@@ -1,7 +1,7 @@
 # ===== < INFO > =====
 
 # ===== < IMPORTS & CONSTANTS > =====
-from helpers import sapilog as sl
+from helpers.logsuite import sapilog as sl
 from helpers import datagen
 from helpers import algebra as alg
 from neural import layer as l

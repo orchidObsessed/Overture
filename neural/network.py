@@ -1,7 +1,7 @@
 # ===== < INFO > =====
 
 # ===== < IMPORTS & CONSTANTS > =====
-from helpers import sapilog as sl
+from helpers.logsuite import sapilog as sl
 from neural import layer
 import numpy as np
 from random import randint
@@ -36,7 +36,6 @@ class NNetwork:
         self._weights.append(w)
         return
 
-    @sl.sapiDumpOnExit
     def train(self, train_data: list[np.array], label_data: list[np.array], c_func: callable, q_c_func: callable, batch_size: int, n_epochs: int, learning_rate=0.1, report_freq=1):
         """
         Train the network using stochastic gradient descent.
