@@ -3,6 +3,7 @@
 # ===== < IMPORTS & CONSTANTS > =====
 from helpers.logsuite import sapilog as sl
 import numpy as np
+import inspect
 
 # ===== < BODY > =====
 class Layer:
@@ -15,7 +16,7 @@ class Layer:
         self._a_func = a_func
         self._q_a_func = q_a_func
         self.z, self.a = None, None
-        sl.log(3, f"{self.__class__.__name__} created")
+        sl.log(3, f"{self.__class__.__name__} created", inspect.stack())
         return
 
     def activation(self, x: np.array, w: np.array) -> np.array:
@@ -29,6 +30,7 @@ class Layer:
         `w` : np.array
             Weights between previous layer and here as a NumPy ndarray of floats.
         """
+        sl.log(4, f"Finding activation of {self.__class__.__name__} with x = {x} and w = {w}", inspect.stack())
         self.z = w.T @ x + self.b
         self.a = self._a_func(self.z)
         return self.a
@@ -38,7 +40,7 @@ class Layer:
         Return the derivative of the activation function with most recent weighted input.
         """
         if not self.z:
-            sl.log(0, "Called before z value calculated")
+            sl.log(0, "Called before z value calculated", inspect.stack())
             raise sl.SapiException()
         return self._q_a_func(self.z)
 
@@ -47,7 +49,7 @@ class Layer:
 
 class Flatten(Layer):
     """
-    Flattening layer; takes an input of a given dimension and reshapes it to a column vector
+    Flattening layer; takes an input of a given dimension and reshapes it to a column vector.
     """
     def __init__(self, size: int, dim: tuple[int]):
         self._indim = dim
@@ -64,7 +66,7 @@ class Flatten(Layer):
             self.a = np.array(x).reshape(self._outdim)
             return self.a
         except ValueError as e:
-            sl.log(0, f"Cannot reshape input {x} of dimension {x.shape} to {self._outdim}")
+            sl.log(0, f"Cannot reshape input {x} of dimension {x.shape} to {self._outdim}", inspect.stack())
             raise sl.sapiDumpOnExit()
 
 # ===== < HELPERS > =====
