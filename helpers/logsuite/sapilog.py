@@ -37,7 +37,7 @@ UNIV_LOG_LOCK = threading.Lock()
 MAX_QUEUE_LEN = 10 # Max number of lines to save in the queue
 MAX_QUEUE_MEM = 32000 # Max number of bytes queue can take up
 MAX_LOG_MEM = 1000000 # Max memory size of logfile before warning
-LOG_PATH = "logs/" # Where to write logs to
+LOG_PATH = "helpers\\logsuite\\logs\\" # Where to write logs to
 
 # ===== < BODY > =====
 @vl.pooled_threaded
@@ -113,7 +113,7 @@ def _log_dump():
     # Filepath generation & verification
     fpath = f"{LOG_PATH}{strftime('%m-%d-%y')}.slog"
     if not os.path.exists(fpath):
-        with open(fpath, "a+") as _: pass
+        with open(fpath, "w") as _: pass
     if os.path.getsize(fpath) > 1000000: log(1, "Slog file exceeding 1MB, recommend regeneration". inspect.stack())
 
     # Dump queue
