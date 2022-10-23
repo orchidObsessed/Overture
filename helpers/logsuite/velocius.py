@@ -229,7 +229,7 @@ class SimpleLagoon:
                     fcall[0](*fcall[1])
                     self.__task_queue.task_done()
             except Empty as _: pass
-            except Exception as e: print(f"Error in Lagoon {self.name}: {e}")
+            except Exception as e: print(f"Error in Lagoon {self.name}: {e} | {fcall}")
             finally:
                 main_is_alive = t.main_thread().is_alive()
                 queue_is_full = self.__task_queue.full()
