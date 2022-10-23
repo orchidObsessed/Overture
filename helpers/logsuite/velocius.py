@@ -221,7 +221,6 @@ class SimpleLagoon:
         main_is_alive = t.main_thread().is_alive()
         queue_is_full = self.__task_queue.full()
         while main_is_alive or queue_is_full:
-            print(f"{main_is_alive} | {queue_is_full}")
             try:
                 fcall = self.__task_queue.get(block=True, timeout=1) # Function call
                 if fcall[0] == "!":
