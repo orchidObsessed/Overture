@@ -5,6 +5,7 @@ from helpers.logsuite import sapilog as sl
 from neural import layer
 import numpy as np
 from random import randint
+import inspect
 
 # ===== < BODY > =====
 class NNetwork:
@@ -14,6 +15,7 @@ class NNetwork:
     def __init__(self):
         self._raw_layers = []
         self._weights = [] # List of NumPy ndarrays representing weight matrices
+        sl.log(3, f"NNetwork object created", inspect.stack())
         return
 
     # +----------------+
@@ -24,7 +26,10 @@ class NNetwork:
         Overload immediate-add (ie. addition with assignment) to allow for appending `Layer` objects.
         """
         self._raw_layers.append(l)
-        if len(self) >= 2: self._gen_weights(self._raw_layers[-2], self._raw_layers[-1])
+        sl.log(2, f"{l.__class__.__name__} layer added to NNetwork", inspect.stack())
+        if len(self) >= 2:
+            self._gen_weights(self._raw_layers[-2], self._raw_layers[-1])
+            sl.log(2, f"{self._weights[-1].shape} weight matrix added to NNetwork", inspect.stack())
         return self
 
     def _gen_weights(self, from_layer: layer.Layer, to_layer: layer.Layer):
@@ -32,7 +37,7 @@ class NNetwork:
         Generate a weight matrix between two layers.
         """
         w = np.random.rand(len(from_layer), len(to_layer))
-        sl.log(4, f"Created randomly initialized weight matrix with shape {w.shape}")
+        sl.log(4, f"Created randomly initialized weight matrix with shape {w.shape}", inspect.stack())
         self._weights.append(w)
         return
 
@@ -61,13 +66,13 @@ class NNetwork:
         """
         # Step 0: Set up local variables and log
         avg_loss = 0
-        sl.log(3, f"Beginning training with {len(train_data)} samples over {n_epochs} epochs, using batch size {batch_size} and a learning rate of {learning_rate}")
+        sl.log(3, f"Beginning training with {len(train_data)} samples over {n_epochs} epochs, using batch size {batch_size} and a learning rate of {learning_rate}", inspect.stack())
 
         # Step 1: Main training loop
         for e in range(n_epochs):
-            if e % report_freq == 0 and e != 0:
-                print(f"{e}/{n_epochs} | [" + "="*int(e/report_freq) + ">" + " "*(int(n_epochs / report_freq) - int(e/report_freq)) + "]", end='\r')
 
+            if e > 0 and e % report_freq == 0:
+                sl.log(3, f"Epoch {e} -> avg loss={avg_loss/e}")
             batch_w_grad, batch_b_grad = [np.zeros_like(w) for w in self._weights], [np.zeros_like(l.b) for l in self._raw_layers[1:]]
 
             for b in range(batch_size):
@@ -119,9 +124,7 @@ class NNetwork:
 
 
         # Step 2: Report accuracy
-        print(f"{n_epochs}/{n_epochs} | [" + "="*(int(n_epochs / report_freq)+1) + "]")
-        sl.log(2, f"Training complete with an average loss per epoch: {avg_loss/n_epochs}")
-
+        sl.log(2, f"Training complete with an average loss per epoch: {avg_loss/n_epochs}", inspect.stack())
         return
 
     # +----------------+
@@ -147,9 +150,9 @@ class NNetwork:
         Logs network parameters.
         """
         sl._logBox("PARAMETERS")
-        sl.log(4, f"Shape: {[len(l) for l in self._raw_layers]}")
-        sl.log(4, f"Biases: {[l.b for l in self._raw_layers]}")
-        sl.log(4, f"Weights: {self._weights}")
+        sl.log(4, f"Shape: {[len(l) for l in self._raw_layers]}", inspect.stack())
+        sl.log(4, f"Biases: {[l.b for l in self._raw_layers]}", inspect.stack())
+        sl.log(4, f"Weights: {self._weights}", inspect.stack())
         return
 
     def evaluate(self, val_data: list[np.array], label_data: list[np.array], c_func: callable, threshold: float = 0.1) -> float:
@@ -165,7 +168,7 @@ class NNetwork:
             avg_cost += cost/len(val_data)
             if cost <= threshold: n_correct += 1
 
-        sl.log(3, f"{n_correct} out of {len(label_data)} samples were within cost threshold {threshold}, for a total accuracy of {n_correct/len(label_data)} and an average cost of {avg_cost}")
+        sl.log(3, f"{n_correct} out of {len(label_data)} samples were within cost threshold {threshold}, for a total accuracy of {n_correct/len(label_data)} and an average cost of {avg_cost}", inspect.stack())
 
         return n_correct/len(label_data)
 
