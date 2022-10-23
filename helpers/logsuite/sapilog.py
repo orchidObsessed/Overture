@@ -114,7 +114,7 @@ def _log_dump():
     fpath = f"{LOG_PATH}{strftime('%m-%d-%y')}.slog"
     if not os.path.exists(fpath):
         with open(fpath, "w") as _: pass
-    if os.path.getsize(fpath) > 1000000: log(1, "Slog file exceeding 1MB, recommend regeneration". inspect.stack())
+    if os.path.getsize(fpath) > 1000000: log(1, "Slog file exceeding 1MB, recommend regeneration", inspect.stack())
 
     # Dump queue
 
