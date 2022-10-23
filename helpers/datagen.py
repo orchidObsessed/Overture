@@ -6,6 +6,7 @@
 # ===== < IMPORTS & CONSTANTS > =====
 from random import uniform, randint
 from helpers.logsuite import sapilog as sl
+import inspect
 
 OUTDIR = "data/" # Where to write the data to
 
@@ -37,7 +38,7 @@ def generateData(degree: int = 3, cfrange: tuple[int] = (-20, 20), srange: tuple
     for d in reversed(range(degree)):
         coefficient = round(uniform(cfrange[0], cfrange[1]), 3)
         components.append(lambda x, d=d, coefficient=coefficient : coefficient * (x ** d)) # Scope loop vars as default parameters
-        sl.log(4, f"Component created | {coefficient}x^{d}")
+        sl.log(4, f"Component created | {coefficient}x^{d}", inspect.stack())
     fullgen = lambda x : sum([f(x) for f in components])
 
     # Step 2: Collect samples as (x,y):a
@@ -55,7 +56,7 @@ def generateData(degree: int = 3, cfrange: tuple[int] = (-20, 20), srange: tuple
 
     # Step 3: Save data, if necessary
     if name:
-        sl.log(3, f"Writing {len(samples)} samples to {OUTDIR}{name}.data")
+        sl.log(3, f"Writing {len(samples)} samples to {OUTDIR}{name}.data", inspect.stack())
         with open(f"{OUTDIR}{name}.data", "w") as fo:
             for k, v in zip(samples.keys(), samples.values()):
                 fo.write(f"{k} = {v}\n")
@@ -85,7 +86,7 @@ def collectData(source: str, folds: int = 3) -> list[dict]:
     # Step 1: Verify filepath and read raw data
     with open(f"{OUTDIR}{source}.data", "r") as fo:
         data = fo.readlines()
-    sl.log(3, f"Read {len(data)} lines from {OUTDIR}{source}.data")
+    sl.log(3, f"Read {len(data)} lines from {OUTDIR}{source}.data", inspect.stack())
 
     # Step 2: Format read data back into non-string datatypes
     data = [x.rstrip() for x in data] # Remove trailing newlines and whitespace
@@ -103,7 +104,7 @@ def collectData(source: str, folds: int = 3) -> list[dict]:
             fdict[k] = v
         folded.append(fdict)
 
-    sl.log(4, f"Folded {len(data)} points into {folds} {increment}-long sets")
+    sl.log(4, f"Folded {len(data)} points into {folds} {increment}-long sets", inspect.stack())
     return tuple(folded)
 
 # ===== < MAIN > =====
