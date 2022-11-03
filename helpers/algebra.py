@@ -110,7 +110,6 @@ def mse(x, y):
             sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
     return ((x - y) ** 2).mean(axis=0)
 
-
 def q_mse(x, y):
     """
     Derivative of the mean squared error loss function.
@@ -122,7 +121,10 @@ def q_mse(x, y):
             sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
     return 2*(x-y)
 
-
 # ===== < MAIN > =====
 if __name__ == "__main__":
-    pass
+    x = np.matrix([[2, 2], [2, 2]])
+    y = np.matrix([[2, 1], [1, 0]])
+    w = np.matrix([[1, 2], [4, 5], [3, 9]])
+    print(mse_l2(x, y, w))
+    print(q_mse_l2(x, y, w))
