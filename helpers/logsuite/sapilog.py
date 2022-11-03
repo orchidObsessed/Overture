@@ -1,11 +1,11 @@
 # ===== < MODULE INFO > =====
-# Author: William "Waddles" Waddell
-# Version: 2.1.4
+# Author: Waddles
+# Version: 2.5.1
 # Description: A smarter logging platform combining live output and logfile functions.
 # ===== < IMPORTS & CONSTANTS > =====
 import inspect, os, functools, sys, threading
 from time import strftime, sleep
-from helpers.logsuite import velocius as vl
+from logsuite import weaver as wv
 
 # Formatting constants
 COLOR = {"RED":"\033[31m",
@@ -34,13 +34,11 @@ MONO = False # Whether to print using color (written logs never use color)
 # Logger vars
 QUEUE = []
 UNIV_LOG_LOCK = threading.Lock()
-MAX_QUEUE_LEN = 10 # Max number of lines to save in the queue
-MAX_QUEUE_MEM = 32000 # Max number of bytes queue can take up
 MAX_LOG_MEM = 1000000 # Max memory size of logfile before warning
 LOG_PATH = "helpers\\logsuite\\logs\\" # Where to write logs to
 
 # ===== < BODY > =====
-@vl.pooled_threaded
+@wv.pool_wrapper
 def log(verbosity: int, message: int, stack: list = None):
     """
     Log an event with a message and a verbosity (severity) level.
@@ -68,7 +66,6 @@ def log(verbosity: int, message: int, stack: list = None):
         if caller_function == "<module>": caller_function = "__main__"
         caller_location = str(stack[0].filename.split("\\")[-1]) # This will retrieve the module that contains that function
     else:
-        # log(1, "Stack trace was not given; using filler", inspect.stack())
         caller_location, caller_function = "?.py", "?"
 
     # Step 2: Format and build logstrings
@@ -83,10 +80,7 @@ def log(verbosity: int, message: int, stack: list = None):
             if MONO: print(full_monochrome)
             else: print(full_color)
         else: print(f"Verbosity {verbosity} > max print {MAX_V_PRINT}")
-        if verbosity <= MAX_V_WRITE: QUEUE.append(f"|{strftime('%d-%m-%y %H:%M:%S')}| {full_monochrome}")
-
-        if len(QUEUE) >= MAX_QUEUE_LEN or sys.getsizeof(QUEUE) >= MAX_QUEUE_MEM: _log_dump()
-
+        if verbosity <= MAX_V_WRITE: QUEUE.append(f"|{strftime('%d-%m-%y %H:%M:%S')}|{full_monochrome}")
     return True
 
 # ===== < HELPERS > =====
@@ -107,21 +101,16 @@ def _logBox(m):
     log(4, "\t\t+--------------------+")
     return
 
-def _log_dump():
-    global QUEUE
-
+def _commit(q):
     # Filepath generation & verification
     fpath = f"{LOG_PATH}{strftime('%m-%d-%y')}.slog"
     if not os.path.exists(fpath):
-        with open(fpath, "w") as _: pass
-    if os.path.getsize(fpath) > 1000000: log(1, "Slog file exceeding 1MB, recommend regeneration", inspect.stack())
+        with open(fpath, "a+") as _: pass
+    if os.path.getsize(fpath) > 1000000: log(1, "Slog file exceeding 1MB, recommend regeneration". inspect.stack())
 
     # Dump queue
-
     with open(fpath, "a+") as fo:
-        fo.writelines([x+"\n" for x in QUEUE])
-        fo.write("*** "*30 + "\n")
-    QUEUE = []
+        fo.writelines([x+"\n" for x in q])
     return
 
 # ===== < EXCEPTIONS > =====
