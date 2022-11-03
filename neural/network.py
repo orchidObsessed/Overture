@@ -37,7 +37,8 @@ class NNetwork:
         Generate a weight matrix between two layers.
         """
         w = np.random.rand(len(from_layer), len(to_layer))
-        sl.log(4, f"Created randomly initialized weight matrix with shape {w.shape}", inspect.stack())
+        sl.log(3, f"Created randomly initialized weight matrix with shape {w.shape}", inspect.stack())
+        sl.log(4, f"Weight matrix: {w}", inspect.stack())
         self._weights.append(w)
         return
 
@@ -95,6 +96,9 @@ class NNetwork:
                 del_w = activations[-2] @ local_gradient
                 del_b = local_gradient
 
+                sl.log(4, f"del_w for output: {del_w}", inspect.stack())
+                sl.log(4, f"del_b for output: {del_b}", inspect.stack())
+
                 sample_w_grad.append(del_w)
                 sample_b_grad.append(del_b)
 
@@ -104,6 +108,9 @@ class NNetwork:
 
                     del_w = activations[l-1] @ local_gradient.T
                     del_b = local_gradient
+
+                    sl.log(4, f"del_w for layer {l}: {del_w}", inspect.stack())
+                    sl.log(4, f"del_b for layer {l}: {del_b}", inspect.stack())
 
                     sample_w_grad.insert(0, del_w)
                     sample_b_grad.insert(0, del_b)
@@ -116,11 +123,12 @@ class NNetwork:
                     batch_b_grad[b] = batch_b_grad[b] + db
 
             # Step 1g: Apply to weights and biases, using learning rate and averaging over batch
+            nu = (learning_rate/batch_size)
             for w, dw in zip(range(len(self._weights)), batch_w_grad):
-                self._weights[w] = self._weights[w] - dw * (learning_rate/batch_size)
+                self._weights[w] = self._weights[w] - (nu * (dw + (0.2*self._weights[w])))
 
             for l, db in zip(self._raw_layers[1:], batch_b_grad):
-                l.b = l.b - db * (learning_rate/batch_size)
+                l.b = l.b - db * nu
 
 
         # Step 2: Report accuracy
