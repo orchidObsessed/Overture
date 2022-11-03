@@ -5,7 +5,7 @@
 # ===== < IMPORTS & CONSTANTS > =====
 import inspect, os, functools, sys, threading
 from time import strftime, sleep
-from logsuite import weaver as wv
+from helpers.logsuite import weaver as wv
 
 # Formatting constants
 COLOR = {"RED":"\033[31m",
