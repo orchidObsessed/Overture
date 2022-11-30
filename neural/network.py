@@ -180,6 +180,40 @@ class NNetwork:
 
         return n_correct/len(label_data)
 
+class PNetwork:
+    """
+
+    """
+    def __init__(self, layers: list["Layer"] = None):
+        self._layers = layers
+        return
+
+    def finalize(self, x_shape: tuple[int]):
+        """
+
+        """
+        # Columnize ("flatten") input dimensions
+        columnized_shape = 1
+        for dim in x_shape: columnized_shape *= dim
+        sl.log(3, f"Columnized {x_shape} to {columnized_shape}")
+        self._layers[0].finalize(columnized_shape)
+
+        for l in range(1, len(self._layers)):
+            self._layers[l].finalize(len(self._layers[l-1]))
+        sl.log(2, f"Finalized model")
+        return
+
+    def evaluate(self, x: np.ndarray) -> np.ndarray:
+        """
+
+        """
+        return
+
+    def train(self, x_set: list[np.ndarray], y_set: list[np.ndarray], batch_size: int, n_epochs: int):
+        """
+
+        """
+        return
 # ===== < HELPERS > =====
 
 # ===== < MAIN > =====
