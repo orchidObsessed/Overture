@@ -100,14 +100,16 @@ class Dense:
         # Weights & biases
         self._biases = np.random.rand(self._size, 1)
         self._weights = np.random.rand(shape=(n_before, self._size))
+        sl.log(4, f"[Dense-{self._id}] w.shape = {self._weights.shape} | b.shape = {self._biases.shape}")
 
         # If no functions given, use identity
         if not self._a_func:
             self._a_func = lambda x: x
+            sl.log(4, f"[Dense-{self._id}] defaulting to identity activation function")
         if not self._q_a_func:
             self._a_func = lambda x: np.ones_like(x)
         return
-    
+
     def activation(self, prev_activation: np.ndarray) -> np.ndarray:
         """
         Calculate the activation function for this layer.
@@ -144,6 +146,9 @@ class Dense:
         e = self._weights @ my_error
         sl.log(4, f"[Dense-{self._id}] error backprop term = {e}")
         return e
+
+    def __len__(self):
+        return self._size
 
 # ===== < HELPERS > =====
 
