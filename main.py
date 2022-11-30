@@ -8,7 +8,7 @@ from neural import layer as l
 from neural import network as nn
 import numpy as np
 
-sl.MAX_V_PRINT = 3 # Print everything
+sl.MAX_V_PRINT = 4 # Print everything
 sl.MAX_V_WRITE = 0 # Don't want to be writing to log for now
 # ===== < BODY > =====
 
@@ -28,17 +28,7 @@ if __name__ == "__main__":
     valilabel = [np.array(x) for x in valilabel]
 
     # Create network
-    test_network = nn.NNetwork()
-    test_network += l.Flatten(2, (1, 2)) # Input layer
-    # test_network += l.Layer(1, alg.sigmoid, alg.q_sigmoid)
-    # test_network += l.Layer(3, alg.tanh, alg.q_tanh) # Hidden 2 - Tanh
-    test_network += l.Layer(1, alg.sigmoid, alg.q_sigmoid) # Output - Sigmoid
-
-    # print(test_network.feedforward([-2, 1]))
-
-    # Train test network
-    test_network.train(train_data, label_data, alg.mse, alg.q_mse, batch_size=1, n_epochs=10, report_freq=100, learning_rate=0.5)
-
-    # Evaluate network
-    test_network.evaluate(validata, valilabel, alg.mse)
-    test_network.tell_params()
+    test_network = nn.PNetwork([l.Dense(16),
+                                l.Dense(16),
+                                l.Dense(10)])
+    test_network.finalize((28, 28))
