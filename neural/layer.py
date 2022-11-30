@@ -107,7 +107,7 @@ class Dense:
             self._a_func = lambda x: x
             sl.log(4, f"[Dense-{self._id}] defaulting to identity activation function")
         if not self._q_a_func:
-            self._a_func = lambda x: np.ones_like(x)
+            self._q_a_func = lambda x: np.ones_like(x)
         return
 
     def activation(self, prev_activation: np.ndarray) -> np.ndarray:
@@ -124,8 +124,8 @@ class Dense:
         numpy.ndarray
             The activation for this layer as a column vector.
         """
-        self.a = self._a_func((self._weights.T @ prev_activation) + self._biases)
-        self.qa = self._q_a_func((self._weights.T @ prev_activation) + self._biases) # Store, since we'll likely need this (and it's inexpensive)
+        self.a = self._a_func(self._weights.T @ prev_activation)
+        self.qa = self._q_a_func(self._weights.T @ prev_activation) # Store, since we'll likely need this (and it's inexpensive)
         sl.log(4, f"[Dense-{self._id}] a = {self.a.tolist()} | qa = {self.qa.tolist()}")
         return self.a
 
@@ -143,7 +143,7 @@ class Dense:
         np.ndarry
             The matrix product of this layer's weights and this layer's error.
         """
-        e = self._weights @ my_error
+        e = np.asmatrix(self._weights @ my_error) # transpose so that it's a column vector
         sl.log(4, f"[Dense-{self._id}] error backprop term = {e}")
         return e
 
