@@ -28,7 +28,10 @@ if __name__ == "__main__":
     valilabel = [np.array(x) for x in valilabel]
 
     # Create network
-    test_network = nn.PNetwork([l.Dense(16),
-                                l.Dense(16),
-                                l.Dense(10)])
-    test_network.finalize((28, 28))
+    test_network = nn.PNetwork([l.Dense(3),
+                                l.Dense(1)])
+    test_network.finalize((2,))
+    x_set = [np.array([2, 3])]
+    y_set = [np.array([1])]
+
+    test_network.train(x_set=x_set, y_set=y_set, batch_size=1, n_epochs=1)
