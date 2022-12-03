@@ -3,7 +3,7 @@
 # ===== < IMPORTS & CONSTANTS > =====
 from helpers.logsuite import sapilog as sl
 import numpy as np
-import inspect
+from inspect import stack
 
 # ===== < BODY > =====
 class Layer:
@@ -16,7 +16,7 @@ class Layer:
         self._a_func = a_func
         self._q_a_func = q_a_func
         self.z, self.a = None, None
-        sl.log(3, f"{self.__class__.__name__} created", inspect.stack())
+        sl.log(3, f"{self.__class__.__name__} created", stack())
         return
 
     def activation(self, x: np.array, w: np.array) -> np.array:
@@ -30,7 +30,7 @@ class Layer:
         `w` : np.array
             Weights between previous layer and here as a NumPy ndarray of floats.
         """
-        sl.log(4, f"Finding activation of {self.__class__.__name__} with x = {x} and w = {w}", inspect.stack())
+        sl.log(4, f"Finding activation of {self.__class__.__name__} with x = {x} and w = {w}", stack())
         self.z = w.T @ x + self.b
         self.a = self._a_func(self.z)
         return self.a
@@ -40,7 +40,7 @@ class Layer:
         Return the derivative of the activation function with most recent weighted input.
         """
         if not self.z:
-            sl.log(0, "Called before z value calculated", inspect.stack())
+            sl.log(0, "Called before z value calculated", stack())
             raise sl.SapiException()
         return self._q_a_func(self.z)
 
@@ -66,14 +66,14 @@ class Flatten(Layer):
             self.a = np.array(x).reshape(self._outdim)
             return self.a
         except ValueError as e:
-            sl.log(0, f"Cannot reshape input {x} of dimension {x.shape} to {self._outdim}", inspect.stack())
+            sl.log(0, f"Cannot reshape input {x} of dimension {x.shape} to {self._outdim}", stack())
             raise sl.sapiDumpOnExit()
 
 class Dense:
     """
 
     """
-    id = 0
+    id = 1
 
     def __init__(self, n_nodes: int, a_func: callable = None, q_a_func: callable = None) -> None:
         # Real attributes
@@ -100,12 +100,12 @@ class Dense:
         # Weights & biases
         self._biases = np.random.rand(self._size, 1)
         self._weights = np.random.rand(n_before, self._size)
-        sl.log(4, f"[Dense-{self._id}] w.shape = {self._weights.shape} | b.shape = {self._biases.shape}")
+        sl.log(4, f"[Dense-{self._id}] w.shape = {self._weights.shape} | b.shape = {self._biases.shape}", stack())
 
         # If no functions given, use identity
         if not self._a_func:
             self._a_func = lambda x: x
-            sl.log(4, f"[Dense-{self._id}] defaulting to identity activation function")
+            sl.log(4, f"[Dense-{self._id}] defaulting to identity activation function", stack())
         if not self._q_a_func:
             self._q_a_func = lambda x: np.ones_like(x)
         return
@@ -124,9 +124,9 @@ class Dense:
         numpy.ndarray
             The activation for this layer as a column vector.
         """
-        self.a = self._a_func(self._weights.T @ prev_activation)
-        self.qa = self._q_a_func(self._weights.T @ prev_activation) # Store, since we'll likely need this (and it's inexpensive)
-        sl.log(4, f"[Dense-{self._id}] a = {self.a.tolist()} | qa = {self.qa.tolist()}")
+        self.a = self._a_func((self._weights.T @ prev_activation) + self._biases)
+        self.qa = self._q_a_func((self._weights.T @ prev_activation) + self._biases) # Store, since we'll likely need this (and it's inexpensive)
+        sl.log(4, f"[Dense-{self._id}] a = {self.a.tolist()} | qa = {self.qa.tolist()}", stack())
         return self.a
 
     def error_prop(self, my_error: np.ndarray) -> np.ndarray:
@@ -143,8 +143,8 @@ class Dense:
         np.ndarry
             The matrix product of this layer's weights and this layer's error.
         """
-        e = np.asmatrix(self._weights @ my_error) # transpose so that it's a column vector
-        sl.log(4, f"[Dense-{self._id}] error backprop term = {e}")
+        e = self._weights @ my_error # transpose so that it's a column vector
+        sl.log(4, f"[Dense-{self._id}] error backprop term = {e.tolist()}", stack())
         return e
 
     def __len__(self):
