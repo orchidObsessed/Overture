@@ -6,202 +6,42 @@ from helpers.algebra import mse, q_mse
 from neural import layer
 import numpy as np
 from random import randint
-import inspect
+from inspect import stack
 
 # ===== < BODY > =====
 class NNetwork:
-    """
-    Converts Layer objects into pure NumPy matrices for operations.
-    """
-    def __init__(self):
-        self._raw_layers = []
-        self._weights = [] # List of NumPy ndarrays representing weight matrices
-        sl.log(3, f"NNetwork object created", inspect.stack())
-        return
-
-    # +----------------+
-    # |    Mutators    |
-    # +----------------+
-    def __iadd__(self, l: layer.Layer):
-        """
-        Overload immediate-add (ie. addition with assignment) to allow for appending `Layer` objects.
-        """
-        self._raw_layers.append(l)
-        sl.log(2, f"{l.__class__.__name__} layer added to NNetwork", inspect.stack())
-        if len(self) >= 2:
-            self._gen_weights(self._raw_layers[-2], self._raw_layers[-1])
-            sl.log(2, f"{self._weights[-1].shape} weight matrix added to NNetwork", inspect.stack())
-        return self
-
-    def _gen_weights(self, from_layer: layer.Layer, to_layer: layer.Layer):
-        """
-        Generate a weight matrix between two layers.
-        """
-        w = np.random.rand(len(from_layer), len(to_layer))
-        sl.log(3, f"Created randomly initialized weight matrix with shape {w.shape}", inspect.stack())
-        sl.log(4, f"Weight matrix: {w}", inspect.stack())
-        self._weights.append(w)
-        return
-
-    def train(self, train_data: list[np.array], label_data: list[np.array], c_func: callable, q_c_func: callable, batch_size: int, n_epochs: int, learning_rate=0.1, report_freq=1):
-        """
-        Train the network using stochastic gradient descent.
-
-        Parameters
-        ----------
-        `train_data` : list[np.array]
-            List of NumPy ndarrays representing datapoints in the training pool
-        `label_data` : list[np.array]
-            List of NumPy ndarrays representing labels for training data
-        `c_func` : callable
-            Cost / loss function
-        `q_c_func` : callable
-            Derivative of `c_func`
-        `batch_size` : int
-            Number of samples per batch
-        `n_epochs` : int
-            Number of batches to run
-        `learning_rate` : float
-            Learning rate to be applied to the weight gradients
-        `report_freq` : int
-            How many epochs before a report is generated
-        """
-        # Step 0: Set up local variables and log
-        avg_loss = 0
-        sl.log(3, f"Beginning training with {len(train_data)} samples over {n_epochs} epochs, using batch size {batch_size} and a learning rate of {learning_rate}", inspect.stack())
-
-        # Step 1: Main training loop
-        for e in range(n_epochs):
-
-            if e > 0 and e % report_freq == 0:
-                sl.log(3, f"Epoch {e} -> avg loss={avg_loss/e}")
-            batch_w_grad, batch_b_grad = [np.zeros_like(w) for w in self._weights], [np.zeros_like(l.b) for l in self._raw_layers[1:]]
-
-            for b in range(batch_size):
-                # Step 1a: Get sample
-                sample_index = randint(0, len(train_data)-1)
-                x, y = train_data[sample_index], label_data[sample_index]
-
-                # Step 1b: Feed forward, and retain activations and weighted inputs
-                self.feedforward(x)
-                activations, zs = [l.a for l in self._raw_layers], [l.z for l in self._raw_layers[1:]]
-
-                # Step 1c: Get the loss of the evaluation for this sample
-                loss = c_func(activations[-1], y)
-                avg_loss += loss
-
-                # Step 1d: Calculate gradient for output layer
-                sample_w_grad, sample_b_grad = [], []
-
-                local_gradient = q_c_func(activations[-1], y)
-                del_w = activations[-2] @ local_gradient
-                del_b = local_gradient
-
-                sl.log(4, f"del_w for output: {del_w}", inspect.stack())
-                sl.log(4, f"del_b for output: {del_b}", inspect.stack())
-
-                sample_w_grad.append(del_w)
-                sample_b_grad.append(del_b)
-
-                # Step 1e: Propagate for rest of network
-                for l, w in zip(reversed(range(1, len(self._raw_layers)-1)), reversed(range(len(self._weights)))):
-                    local_gradient = self._weights[w] @ local_gradient # Propagate local gradient back on weights
-
-                    del_w = activations[l-1] @ local_gradient.T
-                    del_b = local_gradient
-
-                    sl.log(4, f"del_w for layer {l}: {del_w}", inspect.stack())
-                    sl.log(4, f"del_b for layer {l}: {del_b}", inspect.stack())
-
-                    sample_w_grad.insert(0, del_w)
-                    sample_b_grad.insert(0, del_b)
-
-                # Step 1f: Apply to batch gradient
-                for w, dw in zip(range(len(batch_w_grad)), sample_w_grad):
-                    batch_w_grad[w] = batch_w_grad[w] + dw
-
-                for b, db in zip(range(len(batch_b_grad)), sample_b_grad):
-                    batch_b_grad[b] = batch_b_grad[b] + db
-
-            # Step 1g: Apply to weights and biases, using learning rate and averaging over batch
-            nu = (learning_rate/batch_size)
-            for w, dw in zip(range(len(self._weights)), batch_w_grad):
-                self._weights[w] = self._weights[w] - (nu * (dw + (0.2*self._weights[w])))
-
-            for l, db in zip(self._raw_layers[1:], batch_b_grad):
-                l.b = l.b - db * nu
-
-
-        # Step 2: Report accuracy
-        sl.log(2, f"Training complete with an average loss per epoch: {avg_loss/n_epochs}", inspect.stack())
-        return
-
-    # +----------------+
-    # |   Accessors    |
-    # +----------------+
-    def __len__(self):
-        """
-        Overload len to allow for easier representation of network.
-        """
-        return len(self._raw_layers)
-
-    def feedforward(self, x: np.array):
-        """
-        Feed a value through the network, and return the final layer's activation as a NumPy nx1 ndarray.
-        """
-        a = self._raw_layers[0].activation(x) # Force input activation
-        for l, w in zip(self._raw_layers[1:], self._weights):
-            a = l.activation(a, w)
-        return a
-
-    def tell_params(self):
-        """
-        Logs network parameters.
-        """
-        sl._logBox("PARAMETERS")
-        sl.log(4, f"Shape: {[len(l) for l in self._raw_layers]}", inspect.stack())
-        sl.log(4, f"Biases: {[l.b for l in self._raw_layers]}", inspect.stack())
-        sl.log(4, f"Weights: {self._weights}", inspect.stack())
-        return
-
-    def evaluate(self, val_data: list[np.array], label_data: list[np.array], c_func: callable, threshold: float = 0.1) -> float:
-        """
-        Return the accuracy of the network over a labeled validation set.
-        """
-        n_correct = 0
-        avg_cost = 0
-
-        for x, y in zip(val_data, label_data):
-            guess = self.feedforward(x)
-            cost = c_func(guess, y)
-            avg_cost += cost/len(val_data)
-            if cost <= threshold: n_correct += 1
-
-        sl.log(3, f"{n_correct} out of {len(label_data)} samples were within cost threshold {threshold}, for a total accuracy of {n_correct/len(label_data)} and an average cost of {avg_cost}", inspect.stack())
-
-        return n_correct/len(label_data)
-
-class PNetwork:
     """
 
     """
     def __init__(self, layers: list["Layer"] = None):
         self._layers = layers
+        self._shape = []
         return
 
     def finalize(self, x_shape: tuple[int]):
         """
+        Initialize all trainable parameters in the network.
 
+        Parameters
+        ----------
+        `x_shape` : tuple[int]
+            Input shape.
         """
         # Columnize ("flatten") input dimensions
         columnized_shape = 1
         for dim in x_shape: columnized_shape *= dim
-        sl.log(3, f"Columnized {x_shape} to {columnized_shape}")
+        sl.log(3, f"Columnized {x_shape} to {columnized_shape}", stack())
+
+        # Finalize layers in cascading fashion
         self._layers[0].finalize(columnized_shape)
 
         for l in range(1, len(self._layers)):
             self._layers[l].finalize(len(self._layers[l-1]))
-        sl.log(2, f"Finalized model")
+
+        # Build shape, log and return
+        self._shape = [len(l) for l in self._layers]
+        self._shape.insert(0, columnized_shape)
+        sl.log(2, f"Finalized model with shape {self._shape}", stack())
         return
 
     def evaluate(self, x: np.ndarray) -> np.ndarray:
@@ -226,36 +66,33 @@ class PNetwork:
             Number of times to repeat training.
         """
         # Step 1: Select a random sample
-        print(f"xset: {x_set}, yset: {y_set}")
         r = randint(0, len(x_set)-1)
         x, y = x_set[r], y_set[r]
-        sl.log(4, f"Considering sample {r}: {x.tolist()} -> {y}")
+        sl.log(4, f"Considering sample {r}: {x.tolist()} -> {y}", stack())
 
         # Step 2: Forward propagation, loss
         y_hat = x # Set "activation" to be input sample
         for l in self._layers:
             y_hat = l.activation(y_hat) # Overwrite it with layer's activation
         loss = mse(y_hat, y)
-        sl.log(4, f"a_L = {y_hat} | loss = {loss}")
 
         # Step 3: Error and weight gradient for output layer
         e = np.multiply(self._layers[-1].qa, q_mse(y_hat, y))
-        w_grad = np.asmatrix(e) @ np.asmatrix(self._layers[-2].a.T)
-        sl.log(4, f"Output error: {e} | final layer weight gradient: {w_grad}")
+        w_grad = (e @ self._layers[-2].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
+        sl.log(4, f"Output error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
 
-        # Step 4: Backprop error and recalculate weight gradient (up to penultimate)
+        # Step 4: Backprop error and recalculate weight gradient (not including final layer)
         for l in reversed(range(1, len(self._layers)-1)):
             e = np.multiply(self._layers[l].qa, self._layers[l+1].error_prop(e))
-            w_grad = np.asmatrix(e) @ np.asmatrix(self._layers[l-1].a.T)
-            sl.log(4, f"[Layer {l}] error: {e} | final layer weight gradient: {w_grad}")
+            w_grad = (e @ self._layers[l-1].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
+            sl.log(4, f"Layer {l+1} error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
 
         # Step 5: Backprop to the final (first) layer
         e = np.multiply(self._layers[0].qa, self._layers[1].error_prop(e))
-        sl.log(3, f"e: {e}")
-        sl.log(1, f"Finna multiplty {np.asmatrix(e).shape} by {np.asmatrix(x.T).shape}")
-        w_grad = np.asmatrix(e) @ np.asmatrix(x.T)
-        sl.log(4, f"[Layer {l}] error: {e} | final layer weight gradient: {w_grad}")
+        w_grad = (e @ x.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
+        sl.log(4, f"Layer 1 error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
 
+        sl.log(2, f"Training complete")
         return
 # ===== < HELPERS > =====
 
