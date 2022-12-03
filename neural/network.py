@@ -44,13 +44,28 @@ class NNetwork:
         sl.log(2, f"Finalized model with shape {self._shape}", stack())
         return
 
-    def evaluate(self, x: np.ndarray) -> np.ndarray:
+    def predict(self, x: np.ndarray) -> np.ndarray:
         """
 
         """
-        return
+        y_hat = x # Set "activation" to be input sample
+        for l in self._layers:
+            y_hat = l.activation(y_hat) # Overwrite it with layer's activation
+        return y_hat
 
-    def train(self, x_set: list[np.ndarray], y_set: list[np.ndarray], batch_size: int, n_epochs: int):
+    def evaluate(self, x_set: list[np.ndarray], y_set: list[np.ndarray]) -> np.ndarray:
+        """
+
+        """
+        avgloss = 0
+        for x, y in zip(x_set, y_set):
+            prediction = self.predict(x)
+            avgloss += mse(prediction, y)
+        avgloss /= len(x_set)
+        sl.log(2, f"Average loss: {avgloss}", stack())
+        return avgloss
+
+    def train(self, x_set: list[np.ndarray], y_set: list[np.ndarray], batch_size: int, n_epochs: int, learning_rate: int = 0.001):
         """
         Train the network on a given set with contiguous labels.
 
@@ -68,7 +83,6 @@ class NNetwork:
         for epoch in range(n_epochs):
             for n_batches in range(int(len(x_set) / batch_size)):
                 batch_w_grad, batch_b_grad = [np.zeros_like(l._weights) for l in self._layers], [np.zeros_like(l._biases) for l in self._layers]
-                sl.log(3, f"Batch-grad (w): {batch_w_grad}")
                 for _ in range(batch_size):
                     # Step 1: Select a random sample
                     r = randint(0, len(x_set)-1)
@@ -81,11 +95,12 @@ class NNetwork:
                         y_hat = l.activation(y_hat) # Overwrite it with layer's activation
                     loss = mse(y_hat, y)
 
-                    # Step 3: Error and weight gradient for output layer
+                    # Step 3: Error and weight gradient for output layer - only do this step if L > 1
                     e = np.multiply(self._layers[-1].qa, q_mse(y_hat, y))
-                    w_grad = (e @ self._layers[-2].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
-                    batch_w_grad[-1] = batch_w_grad[-1] + w_grad
-                    sl.log(4, f"Output error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
+                    if len(self._layers) > 1:
+                        w_grad = (e @ self._layers[-2].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
+                        batch_w_grad[-1] = batch_w_grad[-1] + w_grad
+                        sl.log(4, f"Output error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
 
                     # Step 4: Backprop error and recalculate weight gradient (not including final layer)
                     for l in reversed(range(1, len(self._layers)-1)):
@@ -95,11 +110,15 @@ class NNetwork:
                         sl.log(4, f"Layer {l+1} error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
 
                     # Step 5: Backprop to the final (first) layer
-                    e = np.multiply(self._layers[0].qa, self._layers[1].error_prop(e))
+                    if len(self._layers) > 1: e = np.multiply(self._layers[0].qa, self._layers[1].error_prop(e)) # don't backprop if L == 1
                     w_grad = (e @ x.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
                     batch_w_grad[0] = batch_w_grad[0] + w_grad
                     sl.log(4, f"Layer 1 error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
-                sl.log(3, f"Batch w grad after full minibatch: {[x.tolist() for x in batch_w_grad]}")
+
+                batch_w_grad = [g * learning_rate for g in batch_w_grad]
+                sl.log(3, f"Final gradients: {[x.tolist() for x in batch_w_grad]}")
+                for l, grad in zip(self._layers, batch_w_grad):
+                    l.adjust(grad)
 
         sl.log(2, f"Training complete")
         return
