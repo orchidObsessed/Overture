@@ -36,5 +36,8 @@ if __name__ == "__main__":
     test_network.train(x_set=validata, y_set=valilabel, batch_size=16, n_epochs=1)
 
     # Evaluate network
-    guess = test_network.predict(validata[0])
+    higuess = test_network.predict(validata[0])
+    loguess = test_network.predict(validata[1])
+    print(f"Got {higuess}, expected {valilabel[0]}")
+    print(f"Got {loguess}, expected {valilabel[1]}")
     test_network.evaluate(validata, valilabel)
