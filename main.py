@@ -28,12 +28,12 @@ if __name__ == "__main__":
     valilabel = [np.expand_dims(np.expand_dims(x, -1), -1) for x in valilabel]
 
     # Create network
-    test_network = nn.NNetwork([l.Dense(2, a_func=alg.sigmoid, q_a_func=alg.q_sigmoid),
+    test_network = nn.NNetwork([l.Dense(2),
                                 l.Dense(1, a_func=alg.sigmoid, q_a_func=alg.q_sigmoid)])
     test_network.finalize((2,))
 
     # Train network
-    test_network.train(x_set=validata, y_set=valilabel, batch_size=128, n_epochs=1)
+    test_network.train(x_set=validata, y_set=valilabel, batch_size=16, n_epochs=1)
 
     # Evaluate network
     guess = test_network.predict(validata[0])
