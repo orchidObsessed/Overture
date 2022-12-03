@@ -25,13 +25,12 @@ if __name__ == "__main__":
     # Format validation data
     validata, valilabel = list(fold2.keys()), list(fold2.values())
     validata = [np.array(x).reshape(2, 1) for x in validata]
-    valilabel = [np.array(x) for x in valilabel]
+    valilabel = [np.expand_dims(np.expand_dims(x, -1), -1) for x in valilabel]
 
     # Create network
-    test_network = nn.PNetwork([l.Dense(3),
+    test_network = nn.NNetwork([l.Dense(3),
+                                l.Dense(2),
                                 l.Dense(1)])
     test_network.finalize((2,))
-    x_set = [np.array([2, 3])]
-    y_set = [np.array([1])]
 
-    test_network.train(x_set=x_set, y_set=y_set, batch_size=1, n_epochs=1)
+    test_network.train(x_set=validata, y_set=valilabel, batch_size=1, n_epochs=1)
