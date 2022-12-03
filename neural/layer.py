@@ -147,6 +147,14 @@ class Dense:
         sl.log(4, f"[Dense-{self._id}] error backprop term = {e.tolist()}", stack())
         return e
 
+    def adjust(self, grad: np.ndarray) -> None:
+        """
+
+        """
+        sl.log(4, f"[Dense-{self._id}] adjusting weights by {grad.tolist()}", stack())
+        self._weights = self._weights - grad
+        return
+
     def __len__(self):
         return self._size
 
