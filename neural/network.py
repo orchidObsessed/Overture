@@ -57,6 +57,7 @@ class NNetwork:
         """
 
         """
+        sl.log(3, f"Evaluating network on {len(x_set)} samples...", stack())
         avgloss = 0
         for x, y in zip(x_set, y_set):
             prediction = self.predict(x)
@@ -65,7 +66,7 @@ class NNetwork:
         sl.log(2, f"Average loss: {avgloss}", stack())
         return avgloss
 
-    def train(self, x_set: list[np.ndarray], y_set: list[np.ndarray], batch_size: int, n_epochs: int, learning_rate: int = 0.001):
+    def train(self, x_set: list[np.ndarray], y_set: list[np.ndarray], batch_size: int, n_epochs: int = 1, learning_rate: int = 0.001):
         """
         Train the network on a given set with contiguous labels.
 
@@ -81,6 +82,7 @@ class NNetwork:
             Number of times to repeat training.
         """
         for epoch in range(n_epochs):
+            sl.log(3, f"Epoch {epoch+1}/{n_epochs}", stack())
             for n_batches in range(int(len(x_set) / batch_size)):
                 batch_w_grad, batch_b_grad = [np.zeros_like(l._weights) for l in self._layers], [np.zeros_like(l._biases) for l in self._layers]
                 for _ in range(batch_size):
@@ -116,11 +118,10 @@ class NNetwork:
                     sl.log(4, f"Layer 1 error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
 
                 batch_w_grad = [g * learning_rate for g in batch_w_grad]
-                sl.log(3, f"Final gradients: {[x.tolist() for x in batch_w_grad]}")
                 for l, grad in zip(self._layers, batch_w_grad):
                     l.adjust(grad)
 
-        sl.log(2, f"Training complete")
+        sl.log(2, f"Training complete", stack())
         return
 # ===== < HELPERS > =====
 
