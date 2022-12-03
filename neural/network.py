@@ -65,32 +65,41 @@ class NNetwork:
         `n_epochs` : int
             Number of times to repeat training.
         """
-        # Step 1: Select a random sample
-        r = randint(0, len(x_set)-1)
-        x, y = x_set[r], y_set[r]
-        sl.log(4, f"Considering sample {r}: {x.tolist()} -> {y}", stack())
+        for epoch in range(n_epochs):
+            for n_batches in range(int(len(x_set) / batch_size)):
+                batch_w_grad, batch_b_grad = [np.zeros_like(l._weights) for l in self._layers], [np.zeros_like(l._biases) for l in self._layers]
+                sl.log(3, f"Batch-grad (w): {batch_w_grad}")
+                for _ in range(batch_size):
+                    # Step 1: Select a random sample
+                    r = randint(0, len(x_set)-1)
+                    x, y = x_set[r], y_set[r]
+                    sl.log(4, f"Considering sample {r}: {x.tolist()} -> {y}", stack())
 
-        # Step 2: Forward propagation, loss
-        y_hat = x # Set "activation" to be input sample
-        for l in self._layers:
-            y_hat = l.activation(y_hat) # Overwrite it with layer's activation
-        loss = mse(y_hat, y)
+                    # Step 2: Forward propagation, loss
+                    y_hat = x # Set "activation" to be input sample
+                    for l in self._layers:
+                        y_hat = l.activation(y_hat) # Overwrite it with layer's activation
+                    loss = mse(y_hat, y)
 
-        # Step 3: Error and weight gradient for output layer
-        e = np.multiply(self._layers[-1].qa, q_mse(y_hat, y))
-        w_grad = (e @ self._layers[-2].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
-        sl.log(4, f"Output error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
+                    # Step 3: Error and weight gradient for output layer
+                    e = np.multiply(self._layers[-1].qa, q_mse(y_hat, y))
+                    w_grad = (e @ self._layers[-2].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
+                    batch_w_grad[-1] = batch_w_grad[-1] + w_grad
+                    sl.log(4, f"Output error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
 
-        # Step 4: Backprop error and recalculate weight gradient (not including final layer)
-        for l in reversed(range(1, len(self._layers)-1)):
-            e = np.multiply(self._layers[l].qa, self._layers[l+1].error_prop(e))
-            w_grad = (e @ self._layers[l-1].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
-            sl.log(4, f"Layer {l+1} error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
+                    # Step 4: Backprop error and recalculate weight gradient (not including final layer)
+                    for l in reversed(range(1, len(self._layers)-1)):
+                        e = np.multiply(self._layers[l].qa, self._layers[l+1].error_prop(e))
+                        w_grad = (e @ self._layers[l-1].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
+                        batch_w_grad[l] = batch_w_grad[l] + w_grad
+                        sl.log(4, f"Layer {l+1} error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
 
-        # Step 5: Backprop to the final (first) layer
-        e = np.multiply(self._layers[0].qa, self._layers[1].error_prop(e))
-        w_grad = (e @ x.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
-        sl.log(4, f"Layer 1 error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
+                    # Step 5: Backprop to the final (first) layer
+                    e = np.multiply(self._layers[0].qa, self._layers[1].error_prop(e))
+                    w_grad = (e @ x.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
+                    batch_w_grad[0] = batch_w_grad[0] + w_grad
+                    sl.log(4, f"Layer 1 error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
+                sl.log(3, f"Batch w grad after full minibatch: {[x.tolist() for x in batch_w_grad]}")
 
         sl.log(2, f"Training complete")
         return
