@@ -33,4 +33,4 @@ if __name__ == "__main__":
                                 l.Dense(1)])
     test_network.finalize((2,))
 
-    test_network.train(x_set=validata, y_set=valilabel, batch_size=1, n_epochs=1)
+    test_network.train(x_set=validata[0:3], y_set=valilabel[0:3], batch_size=3, n_epochs=1)
