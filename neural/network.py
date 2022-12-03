@@ -11,7 +11,7 @@ from inspect import stack
 # ===== < BODY > =====
 class NNetwork:
     """
-
+    Template neural network class.
     """
     def __init__(self, layers: list["Layer"] = None):
         self._layers = layers
@@ -46,7 +46,17 @@ class NNetwork:
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         """
+        Pass a sample through the network and return its output.
 
+        Parameters
+        ----------
+        `x` : np.ndarray
+            Input to pass to network.
+
+        Returns
+        -------
+        np.ndarray
+            Network's output, as the activation of the final layer.
         """
         y_hat = x # Set "activation" to be input sample
         for l in self._layers:
@@ -55,7 +65,19 @@ class NNetwork:
 
     def evaluate(self, x_set: list[np.ndarray], y_set: list[np.ndarray]) -> np.ndarray:
         """
+        Determine the average loss and accuracy of the network on a given dataset.
 
+        Parameters
+        ----------
+        `x_set` : list[np.ndarray]
+            Set of sample inputs; must be contiguous with `y_set`.
+        `y_set` : list[np.ndarray]
+            Set of labels.
+
+        Returns
+        -------
+        np.ndarray
+            Average loss of the network.
         """
         sl.log(3, f"Evaluating network on {len(x_set)} samples...", stack())
         avgloss = 0
@@ -66,7 +88,7 @@ class NNetwork:
         sl.log(2, f"Average loss: {avgloss}", stack())
         return avgloss
 
-    def train(self, x_set: list[np.ndarray], y_set: list[np.ndarray], batch_size: int, n_epochs: int = 1, learning_rate: int = 0.001):
+    def train(self, x_set: list[np.ndarray], y_set: list[np.ndarray], batch_size: int, n_epochs: int = 1, learning_rate: float = 0.001):
         """
         Train the network on a given set with contiguous labels.
 
@@ -80,6 +102,8 @@ class NNetwork:
             Number of samples to consider before updating weights.
         `n_epochs` : int
             Number of times to repeat training.
+        `learning_rate` : float, default=0.001
+            Learning rate to apply to gradients before updating parameters.
         """
         for epoch in range(n_epochs):
             sl.log(3, f"Epoch {epoch+1}/{n_epochs}", stack())
