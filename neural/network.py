@@ -102,6 +102,7 @@ class NNetwork:
                     if len(self._layers) > 1:
                         w_grad = (e @ self._layers[-2].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
                         batch_w_grad[-1] = batch_w_grad[-1] + w_grad
+                        batch_b_grad[-1] = batch_b_grad[-1] + e
                         sl.log(4, f"Output error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
 
                     # Step 4: Backprop error and recalculate weight gradient (not including final layer)
@@ -109,17 +110,19 @@ class NNetwork:
                         e = np.multiply(self._layers[l].qa, self._layers[l+1].error_prop(e))
                         w_grad = (e @ self._layers[l-1].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
                         batch_w_grad[l] = batch_w_grad[l] + w_grad
+                        batch_b_grad[l] = batch_b_grad[l] + e
                         sl.log(4, f"Layer {l+1} error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
 
                     # Step 5: Backprop to the final (first) layer
                     if len(self._layers) > 1: e = np.multiply(self._layers[0].qa, self._layers[1].error_prop(e)) # don't backprop if L == 1
                     w_grad = (e @ x.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
                     batch_w_grad[0] = batch_w_grad[0] + w_grad
+                    batch_b_grad[0] = batch_b_grad[0] + e
                     sl.log(4, f"Layer 1 error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
 
                 batch_w_grad = [g * learning_rate for g in batch_w_grad]
-                for l, grad in zip(self._layers, batch_w_grad):
-                    l.adjust(grad)
+                for l, w_grad, b_grad in zip(self._layers, batch_w_grad, batch_b_grad):
+                    l.adjust(w_grad, b_grad)
 
         sl.log(2, f"Training complete", stack())
         return
