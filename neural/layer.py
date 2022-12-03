@@ -143,7 +143,7 @@ class Dense:
         np.ndarry
             The matrix product of this layer's weights and this layer's error.
         """
-        e = self._weights @ my_error # transpose so that it's a column vector
+        e = self._weights @ my_error
         sl.log(4, f"[Dense-{self._id}] error backprop term = {e.tolist()}", stack())
         return e
 
