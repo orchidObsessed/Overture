@@ -18,14 +18,14 @@ sl.MAX_V_WRITE = 0 # Don't want to be writing to log for now
 if __name__ == "__main__":
     # Read and format test data
     fold1, fold2, fold3 = datagen.collectData("d3&c25&s200")
-    train_data, label_data = list(fold1.keys()), list(fold1.values())
-    train_data = [np.array(x) for x in train_data] # .reshape(2, 1) on the array
-    label_data = [np.array(x) for x in label_data]
+    train_data, train_label = list(fold1.keys()), list(fold1.values())
+    train_data = [np.array(x).reshape(2, 1) for x in train_data] # .reshape(2, 1) on the array
+    train_label = [np.expand_dims(np.expand_dims(x, -1), -1) for x in train_label]
 
     # Format validation data
-    validata, valilabel = list(fold2.keys()), list(fold2.values())
-    validata = [np.array(x).reshape(2, 1) for x in validata]
-    valilabel = [np.expand_dims(np.expand_dims(x, -1), -1) for x in valilabel]
+    test_data, test_label = list(fold2.keys()), list(fold2.values())
+    test_data = [np.array(x).reshape(2, 1) for x in test_data]
+    test_label = [np.expand_dims(np.expand_dims(x, -1), -1) for x in test_label]
 
     # Create network
     test_network = nn.NNetwork([l.Dense(2),
@@ -33,11 +33,12 @@ if __name__ == "__main__":
     test_network.finalize((2,))
 
     # Train network
-    test_network.train(x_set=validata, y_set=valilabel, batch_size=16, n_epochs=1)
+    test_network.train(x_set=train_data, y_set=train_label, batch_size=16, n_epochs=1)
 
     # Evaluate network
-    higuess = test_network.predict(validata[0])
-    loguess = test_network.predict(validata[1])
-    print(f"Got {higuess}, expected {valilabel[0]}")
-    print(f"Got {loguess}, expected {valilabel[1]}")
-    test_network.evaluate(validata, valilabel)
+    higuess = test_network.predict(test_data[0])
+    loguess = test_network.predict(test_data[1])
+    print(f"Got {higuess}, expected {test_label[0]}")
+    print(f"Got {loguess}, expected {test_label[1]}")
+    test_network.evaluate(test_data, test_label)
+    sl.log(0, f"Try re-implementing backprop as a function per-layer! We'll need that for the Conv & max-pool layers.")
