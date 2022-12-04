@@ -103,6 +103,49 @@ class Dense:
     def __len__(self):
         return self._size
 
+class Conv:
+    """
+
+    """
+    id = 1
+
+    def __init__(self):
+        # Real attributes
+        self._id = Conv.id
+        self._kernel_shape = None # Shape of kernel to use for activation
+        self._stride = None # How much to scoot kernel by
+        self._a_func = None # Activation function
+        self._q_a_func = None # Derivative of activation function
+
+        # Cache attributes
+        self.a = None
+        Conv.id += 1
+        return
+
+    def finalize(self, n_before: tuple[int]) -> None:
+        """
+
+        """
+        return
+
+    def activation(self):
+        """
+
+        """
+        return
+
+    def error_prop(self):
+        """
+
+        """
+        return
+
+    def adjust(self):
+        """
+
+        """
+        return
+
 # ===== < HELPERS > =====
 
 # ===== < MAIN > =====
