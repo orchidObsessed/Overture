@@ -30,7 +30,7 @@ class NNetwork:
         # Columnize ("flatten") input dimensions
         columnized_shape = 1
         for dim in x_shape: columnized_shape *= dim
-        sl.log(3, f"Columnized {x_shape} to {columnized_shape}", stack())
+        sl.log(4, f"Columnized {x_shape} to {columnized_shape}", stack())
 
         # Finalize layers in cascading fashion
         self._layers[0].finalize(columnized_shape)
@@ -150,6 +150,7 @@ class NNetwork:
 
         sl.log(2, f"Training complete", stack())
         return
+
 # ===== < HELPERS > =====
 
 # ===== < MAIN > =====
