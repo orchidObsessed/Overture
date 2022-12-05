@@ -33,12 +33,11 @@ if __name__ == "__main__":
     test_network.finalize((2,))
 
     # Train network
-    test_network.train(x_set=train_data, y_set=train_label, batch_size=16, n_epochs=1)
+    test_network.train(x_set=train_data, y_set=train_label, batch_size=25, n_epochs=10, learning_rate=0.005)
 
     # Evaluate network
-    higuess = test_network.predict(test_data[0])
-    loguess = test_network.predict(test_data[1])
-    print(f"Got {higuess}, expected {test_label[0]}")
-    print(f"Got {loguess}, expected {test_label[1]}")
+    # higuess = test_network.predict(test_data[0])
+    # loguess = test_network.predict(test_data[1])
+    # print(f"Got {higuess}, expected {test_label[0]}")
+    # print(f"Got {loguess}, expected {test_label[1]}")
     test_network.evaluate(test_data, test_label)
-    sl.log(0, f"Try re-implementing backprop as a function per-layer! We'll need that for the Conv & max-pool layers.")
