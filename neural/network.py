@@ -107,8 +107,8 @@ class NNetwork:
         """
         for epoch in range(n_epochs):
             sl.log(3, f"Epoch {epoch+1}/{n_epochs}", stack())
+            avgloss = 0
             for n_batches in range(int(len(x_set) / batch_size)):
-                batch_w_grad, batch_b_grad = [np.zeros_like(l._weights) for l in self._layers], [np.zeros_like(l._biases) for l in self._layers]
                 for _ in range(batch_size):
                     # Step 1: Select a random sample
                     r = randint(0, len(x_set)-1)
@@ -120,34 +120,18 @@ class NNetwork:
                     for l in self._layers:
                         y_hat = l.activation(y_hat) # Overwrite it with layer's activation
                     loss = mse(y_hat, y)
+                    avgloss += loss
 
-                    # Step 3: Error and weight gradient for output layer - only do this step if L > 1
-                    e = np.multiply(self._layers[-1].qa, q_mse(y_hat, y))
-                    if len(self._layers) > 1:
-                        w_grad = (e @ self._layers[-2].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
-                        batch_w_grad[-1] = batch_w_grad[-1] + w_grad
-                        batch_b_grad[-1] = batch_b_grad[-1] + e
-                        sl.log(4, f"Output error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
+                    # Step 3: Backprop 2.0!
+                    error_gradient = np.multiply(self._layers[-1].qa, q_mse(y_hat, y)) # output layer's error is statically generated
+                    for layer in reversed(self._layers):
+                        error_gradient = layer.backprop(error_gradient)
 
-                    # Step 4: Backprop error and recalculate weight gradient (not including final layer)
-                    for l in reversed(range(1, len(self._layers)-1)):
-                        e = np.multiply(self._layers[l].qa, self._layers[l+1].error_prop(e))
-                        w_grad = (e @ self._layers[l-1].a.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
-                        batch_w_grad[l] = batch_w_grad[l] + w_grad
-                        batch_b_grad[l] = batch_b_grad[l] + e
-                        sl.log(4, f"Layer {l+1} error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
-
-                    # Step 5: Backprop to the final (first) layer
-                    if len(self._layers) > 1: e = np.multiply(self._layers[0].qa, self._layers[1].error_prop(e)) # don't backprop if L == 1
-                    w_grad = (e @ x.T).T ## Deviating from eq.3; transposing to turn rowvec into colvec
-                    batch_w_grad[0] = batch_w_grad[0] + w_grad
-                    batch_b_grad[0] = batch_b_grad[0] + e
-                    sl.log(4, f"Layer 1 error: {e.tolist()} | weight gradient: {w_grad.tolist()}", stack())
-
-                batch_w_grad = [g * learning_rate for g in batch_w_grad]
-                for l, w_grad, b_grad in zip(self._layers, batch_w_grad, batch_b_grad):
-                    l.adjust(w_grad, b_grad)
-
+                for layer in self._layers:
+                    layer.adjust(learning_rate=learning_rate, batch_size=batch_size)
+                sl.log(4, f"Batch {n_batches+1} complete", stack())
+            avgloss /= len(x_set)
+            sl.log(3, f"Average loss for epoch {epoch+1}: {avgloss}", stack())
         sl.log(2, f"Training complete", stack())
         return
 
