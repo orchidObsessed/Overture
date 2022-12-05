@@ -116,6 +116,9 @@ class Dense:
         return
 
     def __len__(self):
+        """
+        Returns the number of nodes in this layer.
+        """
         return self._size
 
 class Conv:
@@ -125,16 +128,9 @@ class Conv:
     id = 1
 
     def __init__(self):
-        # Real attributes
-        self._id = Conv.id
-        self._kernel_shape = None # Shape of kernel to use for activation
-        self._stride = None # How much to scoot kernel by
-        self._a_func = None # Activation function
-        self._q_a_func = None # Derivative of activation function
+        """
 
-        # Cache attributes
-        self.a = None
-        Conv.id += 1
+        """
         return
 
     def finalize(self, n_before: tuple[int]) -> None:
@@ -167,53 +163,156 @@ class MaxPool:
     """
     id = 1
 
-    def __init__(self):
+    def __init__(self, kernel_shape: int, stride: int = None):
+        # Real attributes
+        self._id = MaxPool.id
+        self._kernel_shape = (kernel_shape, kernel_shape) # Kernel dimensions (r, c)
+        if stride: self._stride = stride # Stride to move filter by between each slice
+        else: self._stride = kernel_shape # If no stride given, assume no-overlap stride length
+        self._n_slices = None # Number of slices we can expect
+        self._in_shape = None # Expected shape of input
+        self._out_shape = None # Expected shape of output
+
+        # Cache attributes
+        self.a = None # Most recent output
+        self._last_input = None # Most recent input
+
+        sl.log(4, f"[MaxPool-{self._id}] Kernel dimensions: {self._kernel_shape} || Stride: {self._stride}", stack())
+        MaxPool.id += 1
         return
 
-    def activation(self):
+    def finalize(self, in_shape: tuple[int]) -> None:
         """
 
         """
+        self._in_shape = in_shape
+        if in_shape[0] % self._stride != 0 or in_shape[1] % self._stride != 0:
+            sl.log(1, f"[MaxPool-{self._id}] Please double-check 2D dimensions: input dimension {in_shape}, kernel dimension {self._kernel_shape}, stride {self._stride}", stack())
+        self._out_shape = (in_shape[0] // self._stride, in_shape[1] // self._stride)
         return
 
-    def error_prop(self):
+    def _convo_slices(self, prev_activation: np.ndarray) -> list[np.ndarray]:
         """
+        Builds and returns an array of subsections of the input to act on.
+        """
+        slices = []
+        for row in range(0, self._in_shape[0], self._stride):
+            for col in range(0, self._in_shape[1], self._stride):
+                sl.log(4, f"[MaxPool-{self._id}] slicing on [{row}:{row+2},{col}:{col+2}]", stack())
+                slices.append(prev_activation[row:row+self._kernel_shape[0], col:col+self._kernel_shape[1]])
+        return slices
 
+    def activation(self, prev_activation: np.ndarray) -> np.ndarray:
         """
-        return
+        Returns maximum value in each subslice of `prev_activation`, where subslices are determined by the kernel shape and stride.
+        """
+        self._last_input = prev_activation
+        slices = self._convo_slices(prev_activation)
+        output = []
 
-    def adjust(self):
-        """
+        for slice in slices:
+            output.append(np.amax(slice))
+        self.a = np.reshape(output, self._out_shape)
+        sl.log(4, f"[MaxPool-{self._id}] Activation: {self.a.tolist()}", stack())
+        return self.a
 
+    def backprop(self, front_error_gradient: np.ndarray) -> np.ndarray:
         """
+        Propagate `front_error_gradient` backwards through this layer.
+
+        This is done by returning a 0-array with shape `in_shape`, and placing each value in `front_error_gradient` into its corresponding index.
+
+        Notes
+        -----
+        This is a very sloppy implementation that could probably be dramatically improved.
+        """
+        # Re-generate indices of max values from last activation
+        e = []
+        slices = self._convo_slices(self._last_input) # most recent set of subslices
+        for slice, a, i in zip(slices, self.a.flatten().tolist(), range(self._out_shape[0]*self._out_shape[1])):
+            # Find the index of max value
+            index = np.where(slice == a)
+            index = (index[0][0], index[1][0])
+
+            # Set that index equal to corresponding error gradient, all others 0
+            sub_e = np.zeros_like(slice)
+            sub_e[index[0], index[1]] = front_error_gradient.flatten()[i]
+            e.append(sub_e)
+
+        # Final dimensionality & typing
+        e = np.reshape(e, self._in_shape)
+        sl.log(4, f"[MaxPool-{self._id}] Error: {e.tolist()}", stack())
+        return e
+
+    def adjust(self, *args, **kwargs):
+        """
+        This function does nothing, since `MaxPool` layers are non-trainable.
+        """
+        sl.log(4, f"[MaxPool-{self._id}] Doing nothing", stack())
         return
 
 class Flatten:
     """
-
+    Non-trainable layer; covnverts true-2D input into column matrix form.
     """
     id = 1
 
     def __init__(self):
+        # Real attributes
+        self._in_shape = None # Expected input shape
+        self._out_shape = None # Expected output shape
+        self._id = Flatten.id # Unique ID
+
+        # Cache attribtes
+        self.a = None # Last output
+        self._prev_input = None # Last input
+
+        Flatten.id += 1
         return
 
-    def activation(self):
+    def finalize(self, in_shape: tuple[int]) -> None:
         """
+        Finalize this layer.
 
+        This function should only be called by NNetwork, not by developers.
         """
+        # Dimensionality attribute initialization
+        self._in_shape = in_shape
+        self._out_shape = 1
+        for dim in in_shape: self._out_shape *= dim
+        self._out_shape = (self._out_shape, 1)
+
+        sl.log(4, f"[Flatten-{self._id}] Input: {self._in_shape} || Output: {self._out_shape}", stack())
         return
 
-    def error_prop(self):
+    def activation(self, prev_activation: np.ndarray) -> np.ndarray:
         """
+        Converts 2D input to 1D output, while spatial order.
+        """
+        self.a = np.expand_dims(prev_activation.flatten(), -1)
+        sl.log(4, f"[Flatten-{self._id}] a={self.a.tolist()}", stack())
+        return self.a
 
+    def backprop(self, front_error_gradient: np.ndarray) -> np.ndarray:
         """
+        Just reshapes error gradient from a column vector to correct 2D form and passes it back.
+        """
+        e = np.reshape(front_error_gradient, self._in_shape)
+        sl.log(4, f"[Flatten-{self._id}] e={e.tolist()}", stack())
+        return e
+
+    def adjust(self, *args, **kwargs):
+        """
+        Empty function.
+        """
+        sl.log(4, f"[Flatten-{self._id}] doing nothing", stack())
         return
 
-    def adjust(self):
+    def __len__(self):
         """
-
+        Returns the column-length of this layer's output.
         """
-        return
+        return self._out_shape[0]
 # ===== < HELPERS > =====
 
 # ===== < MAIN > =====
