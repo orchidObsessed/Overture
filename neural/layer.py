@@ -24,6 +24,9 @@ class Dense:
         # Cache attributes
         self.a = None # Activation
         self.qa = None # Derivative of activation
+        self._prev_activation = None # Most recently recieved input
+        self._batch_weight_gradient = None # Batch weight update gradient
+        self._batch_bias_gradient = None # Batch bias update gradient
 
         Dense.id += 1
         return
@@ -35,8 +38,8 @@ class Dense:
         This function should only be called by NNetwork, not by developers.
         """
         # Weights & biases
-        self._biases = np.random.rand(self._size, 1)
-        self._weights = np.random.rand(n_before, self._size)
+        self._biases, self._batch_bias_gradient = np.random.rand(self._size, 1), np.zeros((self._size, 1))
+        self._weights, self._batch_weight_gradient = np.random.rand(n_before, self._size), np.zeros((n_before, self._size))
         sl.log(4, f"[Dense-{self._id}] w.shape = {self._weights.shape} | b.shape = {self._biases.shape}", stack())
 
         # If no functions given, use identity
@@ -61,43 +64,55 @@ class Dense:
         numpy.ndarray
             The activation for this layer as a column vector.
         """
+        self._prev_activation = prev_activation
         self.a = self._a_func((self._weights.T @ prev_activation) + self._biases)
         self.qa = self._q_a_func((self._weights.T @ prev_activation) + self._biases) # Store, since we'll likely need this (and it's inexpensive)
         sl.log(4, f"[Dense-{self._id}] a = {self.a.tolist()} | qa = {self.qa.tolist()}", stack())
         return self.a
 
-    def error_prop(self, my_error: np.ndarray) -> np.ndarray:
+    def backprop(self, front_error_gradient: np.ndarray) -> np.ndarray:
         """
         Calculate the hadamard term for backward error propagation, FROM this layer.
 
         Parameters
         ----------
-        my_error : np.ndarray
-            The error gradient at this layer.
+        `my_error` : np.ndarray
+            The backpropagated error from the next layer.
 
         Returns
         -------
         np.ndarry
             The matrix product of this layer's weights and this layer's error.
         """
-        e = self._weights @ my_error
-        sl.log(4, f"[Dense-{self._id}] error backprop term = {e.tolist()}", stack())
-        return e
+        e = np.multiply(self.qa, front_error_gradient)
+        w_grad = (e @ self._prev_activation.T).T
+        self._batch_weight_gradient = self._batch_bias_gradient + w_grad
+        self._batch_bias_gradient = self._batch_bias_gradient + e
+        sl.log(4, f"[Dense-{self._id}] Error: {e.tolist()} || Weight gradient: {w_grad.tolist()}", stack())
+        return self._weights @ front_error_gradient
 
-    def adjust(self, w_grad: np.ndarray, b_grad: np.ndarray) -> None:
+    def adjust(self, learning_rate: float, batch_size: int) -> None:
         """
         Update weights and biases of this layer.
 
         Parameters
         ----------
-        `w_grad` : np.ndarray
-            Weight gradient to update with. Learning rate should be pre-applied!
-        `b_grad` : np.ndarray
-            Bias gradient to update with.
+        `learning_rate` : float
+            Learning rate to be applied to the gradients.
+        `batch_size` : int
+            Batch size to use to average changes.
         """
-        sl.log(4, f"[Dense-{self._id}] w_grad = {w_grad.tolist()} | b_grad = {b_grad.tolist()}", stack())
-        self._weights = self._weights - w_grad
-        self._biases = self._biases - b_grad
+        # Apply learning rate & batch size averaging to delta gradients
+        self._batch_bias_gradient = self._batch_bias_gradient * (learning_rate/batch_size)
+        self._batch_weight_gradient = self._batch_weight_gradient * (learning_rate/batch_size)
+        sl.log(4, f"[Dense-{self._id}] Weight gradient = {self._batch_weight_gradient.tolist()} | Bias gradient = {self._batch_bias_gradient.tolist()}", stack())
+        # Adjust weights & biases
+        self._weights = self._weights - self._batch_weight_gradient
+        self._biases = self._biases - self._batch_bias_gradient
+        sl.log(4, f"[Dense-{self._id}] New weights = {self._weights.tolist()} | New biases = {self._biases.tolist()}", stack())
+        # Reset gradients
+        self._batch_bias_gradient = np.zeros_like(self._batch_bias_gradient)
+        self._batch_weight_gradient = np.zeros_like(self._batch_weight_gradient)
         return
 
     def __len__(self):
@@ -146,6 +161,59 @@ class Conv:
         """
         return
 
+class MaxPool:
+    """
+
+    """
+    id = 1
+
+    def __init__(self):
+        return
+
+    def activation(self):
+        """
+
+        """
+        return
+
+    def error_prop(self):
+        """
+
+        """
+        return
+
+    def adjust(self):
+        """
+
+        """
+        return
+
+class Flatten:
+    """
+
+    """
+    id = 1
+
+    def __init__(self):
+        return
+
+    def activation(self):
+        """
+
+        """
+        return
+
+    def error_prop(self):
+        """
+
+        """
+        return
+
+    def adjust(self):
+        """
+
+        """
+        return
 # ===== < HELPERS > =====
 
 # ===== < MAIN > =====
