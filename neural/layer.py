@@ -127,17 +127,67 @@ class Conv:
     """
     id = 1
 
-    def __init__(self):
-        """
+    def __init__(self, kernel_shape: tuple[int] = (3, 3), n_filters: int = 1, stride: int = 1):
+        # Real attributes
+        self._id = Conv.id
+        self._kernel_shape = list(kernel_shape) # Kernel shape; depth will be populated in finalize()
+        self._filters = [] # List of filter matrices
+        self._n_filters = n_filters
+        self._stride = stride # Filter stride to use in _convo_slices
+        self._expected_in = None # Expected input shape (row, col, depth)
+        self._expected_out = None # Expected output shape (row, col, depth)
 
-        """
+        # Cache attributes
+        self._last_input = None # Most recent input
+
+        Conv.id += 1
         return
 
     def finalize(self, n_before: tuple[int]) -> None:
         """
+        Lock in dimensional attributes and initialize trainable parameters.
+
+        Parameters
+        ----------
+        `n_before` : tuple[int]
+            Output shape of previous layer.
+        """
+        # Build input shape
+        if len(n_before) == 3:
+            self._expected_in = n_before
+        elif len(n_before) == 2: # If not given depth channel
+            self._expected_in = (n_before[0], n_before[1], 1) # Assume depth 1
+        else:
+            sl.log(0, f"[Conv-{self._id}] Incorrect dimensions given for finalization: {n_before}", stack())
+            raise Exception
+
+        # Build output shape
+        self._expected_out = []
+        self._expected_out.append(((self._expected_in[0] - self._kernel_shape[0]) // self._stride)+1)
+        self._expected_out.append(((self._expected_in[1] - self._kernel_shape[1]) // self._stride)+1)
+        self._expected_out.append(self._n_filters)
+        self._expected_out = tuple(self._expected_out)
+
+        # Initialize filters
+        self._kernel_shape.append(self._expected_in[-1]) # Expand filter to full depth of input
+        self._kernel_shape = tuple(self._kernel_shape)
+        for _ in range(self._n_filters):
+            self._filters.append(np.random.rand(*self._kernel_shape, self._expected_in[-1])) # Unpack kernel shape on-the-fly
+        sl.log(4, f"[Conv-{self._id}] Built {self._n_filters} filters with shape {self._kernel_shape}", stack())
+
+        sl.log(4, f"[Conv-{self._id}] Expected dims: {self._expected_in} -> {self._expected_out}", stack())
+        return
+
+    def _convo_slices(self, prev_activation: np.ndarray) -> list[np.ndarray]:
+        """
 
         """
-        return
+        chunks = []
+        for row in range(0, self._expected_in[0], self._stride):
+            for col in range(0, self._expected_in[1], self._stride):
+                sl.log(4, f"[MaxPool-{self._id}] slicing on [0:{self._expected_in[-1]},{row}:{row+self._kernel_shape[0]},{col}:{col+self._kernel_shape[1]}]", stack())
+                chunks.append(prev_activation[0:self._expected_in[-1],row:row+self._kernel_shape[0], col:col+self._kernel_shape[1]])
+        return chunks
 
     def activation(self):
         """
@@ -194,6 +244,12 @@ class MaxPool:
     def _convo_slices(self, prev_activation: np.ndarray) -> list[np.ndarray]:
         """
         Builds and returns an array of subsections of the input to act on.
+
+        Notes
+        -----
+        This could be rewritten to be more efficient via `yield`, but that would
+        require rewriting other functions to either 1. convert the generator to
+        a true list, or 2. make use of the generator in a loop.
         """
         slices = []
         for row in range(0, self._in_shape[0], self._stride):
