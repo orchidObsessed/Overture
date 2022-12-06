@@ -31,18 +31,9 @@ if __name__ == "__main__":
     # test_network = nn.NNetwork([l.Dense(2),
     #                             l.Dense(1, a_func=alg.sigmoid, q_a_func=alg.q_sigmoid)])
     # test_network.finalize((2,))
-    test_mp = l.MaxPool(2, 2)
-    test_mp.finalize((4, 4))
-    sample_im = np.reshape([1, 0, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 4], (4, 4))
-    sample_e = np.reshape([1, 2, 3, 4], (2, 2))
-    # slices = test_mp._convo_slices(sample_im)
-    test_mp.activation(sample_im)
-    test_mp.backprop(sample_e)
-    test_mp.adjust(learning_rate=500, batch_size=10)
-
 
     # Train network
-    # test_network.train(x_set=train_data, y_set=train_label, batch_size=128, n_epochs=10, learning_rate=0.05)
+    # test_network.train(x_set=train_data, y_set=train_label, batch_size=1, n_epochs=3, learning_rate=0.001)
 
     # Evaluate network
     # higuess = test_network.predict(test_data[0])
@@ -50,3 +41,14 @@ if __name__ == "__main__":
     # print(f"Got {higuess}, expected {test_label[0]}")
     # print(f"Got {loguess}, expected {test_label[1]}")
     # test_network.evaluate(test_data, test_label)
+    #
+    # for layer in  test_network._layers:
+    #     sl.log(3, f"Layer-{layer._id} w={layer._weights.tolist()} | b={layer._biases.tolist()}")
+
+
+    # Build test conv layer
+    cl = l.Conv(kernel_shape=(2, 2), n_filters=1, stride=1)
+    cl.finalize((4, 4, 2))
+
+    for chunk in cl._convo_slices(np.array([[[1, 1, 2, 2], [1, 1, 2, 2], [3, 3, 4, 4], [3, 3, 4, 4]], [[1, 1, 2, 2], [1, 1, 2, 2], [3, 3, 4, 4], [3, 3, 4, 4]]])):
+        print(chunk.tolist())
