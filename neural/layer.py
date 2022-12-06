@@ -178,20 +178,25 @@ class Conv:
         sl.log(4, f"[Conv-{self._id}] Expected dims: {self._expected_in} -> {self._expected_out}", stack())
         return
 
-    def _convo_slices(self, prev_activation: np.ndarray) -> list[np.ndarray]:
+    def _convo_chunks(self, prev_activation: np.ndarray) -> list[np.ndarray]:
         """
+        Iterate over a given `prev_activation`, returning `r` by `c` sections across a full depth `d`.
 
+        Parameters
+        ----------
+        `prev_activation` : np.ndarray
+            Activation from previous layer.
         """
         chunks = []
-        for row in range(0, self._expected_in[0], self._stride):
-            for col in range(0, self._expected_in[1], self._stride):
-                sl.log(4, f"[MaxPool-{self._id}] slicing on [0:{self._expected_in[-1]},{row}:{row+self._kernel_shape[0]},{col}:{col+self._kernel_shape[1]}]", stack())
-                chunks.append(prev_activation[0:self._expected_in[-1],row:row+self._kernel_shape[0], col:col+self._kernel_shape[1]])
+        for row_index in range(0, self._expected_in[0], self._stride):
+            for col_index in range(0, self._expected_in[1], self._stride):
+                sl.log(4, f"[Conv-{self._id}] Slicing on [0:{self._expected_in[2]}, {row_index}:{row_index+self._kernel_shape[0]}, {col_index}:{col_index+self._kernel_shape[1]}]", stack())
+                chunks.append(prev_activation[0:self._expected_in[2], row_index:row_index+self._kernel_shape[0], col_index:col_index+self._kernel_shape[1]])
         return chunks
 
     def activation(self):
         """
-
+        Calculate, return & cache the activation for this layer.
         """
         return
 
