@@ -28,19 +28,19 @@ class NNetwork:
             Input shape.
         """
         # Columnize ("flatten") input dimensions
-        columnized_shape = 1
-        for dim in x_shape: columnized_shape *= dim
-        sl.log(4, f"Columnized {x_shape} to {columnized_shape}", stack())
+        # columnized_shape = 1
+        # for dim in x_shape: columnized_shape *= dim
+        # sl.log(4, f"Columnized {x_shape} to {columnized_shape}", stack())
 
         # Finalize layers in cascading fashion
-        self._layers[0].finalize(columnized_shape)
+        self._layers[0].finalize(x_shape)
 
         for l in range(1, len(self._layers)):
-            self._layers[l].finalize(len(self._layers[l-1]))
+            self._layers[l].finalize(self._layers[l-1].out_dim())
 
         # Build shape, log and return
-        self._shape = [len(l) for l in self._layers]
-        self._shape.insert(0, columnized_shape)
+        self._shape = [l.out_dim() for l in self._layers]
+        self._shape.insert(0, x_shape)
         sl.log(2, f"Finalized model with shape {self._shape}", stack())
         return
 
