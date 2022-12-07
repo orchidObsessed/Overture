@@ -73,10 +73,7 @@ if __name__ == "__main__":
                         [3, 3, 4, 4]]])
     # for m in tensor: 2D MATRIX
     # for s in m     : 1D ARRAY
-    print(tensor.shape)
 
     cl = l.Conv(kernel_shape=(2, 2), n_filters=1, stride=2)
     cl.finalize((4, 4, 4))
-
-    for chunk in cl._convo_chunks(tensor):
-        print(chunk.tolist())
+    sl.log(2, str(cl.activation(tensor)))
