@@ -6,6 +6,7 @@ from helpers.algebra import mse, q_mse
 from neural import layer
 import numpy as np
 from random import randint
+from time import sleep
 from inspect import stack
 
 # ===== < BODY > =====
@@ -105,15 +106,18 @@ class NNetwork:
         `learning_rate` : float, default=0.001
             Learning rate to apply to gradients before updating parameters.
         """
+        sl.log(3, f"Expected # batches: {len(x_set) // batch_size}", stack())
         for epoch in range(n_epochs):
             sl.log(3, f"Epoch {epoch+1}/{n_epochs}", stack())
             avgloss = 0
-            for n_batches in range(int(len(x_set) / batch_size)):
+            for n_batches in range(len(x_set) // batch_size):
+                sl.log(3, f"Starting batch {n_batches+1}/{len(x_set) // batch_size}", stack())
+                batch_avgloss = 0
                 for _ in range(batch_size):
                     # Step 1: Select a random sample
                     r = randint(0, len(x_set)-1)
                     x, y = x_set[r], y_set[r]
-                    sl.log(4, f"Considering sample {r}: {x.tolist()} -> {y}", stack())
+                    # sl.log(4, f"Considering sample {r}: {x.tolist()} -> {y}", stack())
 
                     # Step 2: Forward propagation, loss
                     y_hat = x # Set "activation" to be input sample
@@ -121,6 +125,7 @@ class NNetwork:
                         y_hat = l.activation(y_hat) # Overwrite it with layer's activation
                     loss = mse(y_hat, y)
                     avgloss += loss
+                    batch_avgloss += loss
 
                     # Step 3: Backprop 2.0!
                     error_gradient = np.multiply(self._layers[-1].qa, q_mse(y_hat, y)) # output layer's error is statically generated
@@ -129,7 +134,8 @@ class NNetwork:
 
                 for layer in self._layers:
                     layer.adjust(learning_rate=learning_rate, batch_size=batch_size)
-                sl.log(4, f"Batch {n_batches+1} complete", stack())
+                batch_avgloss /= batch_size
+                sl.log(3, f"Batch {n_batches+1} complete | average loss: {batch_avgloss}", stack())
             avgloss /= len(x_set)
             sl.log(3, f"Average loss for epoch {epoch+1}: {avgloss}", stack())
         sl.log(2, f"Training complete", stack())
