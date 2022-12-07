@@ -223,7 +223,7 @@ class Conv:
                 chunk_out = 0
                 for mat in chunk: # A mat(rix) is now a 2d, single plane
                     chunk_out += np.multiply(mat, f).sum()
-                sl.log(1, f"[Conv-{self._id}] We still need to apply an activation function here!", stack())
+                # sl.log(1, f"[Conv-{self._id}] We still need to apply an activation function here!", stack())
                 output.append(chunk_out)
         output = np.reshape(output, (self._expected_out[2], *self._expected_out[0:2]))
         return output
@@ -248,11 +248,28 @@ class Conv:
 
         return np.ones((self._expected_in[-1], *self._expected_in[0:2]))
 
-    def adjust(self, *args, **kwargs):
+    def adjust(self, learning_rate: float, batch_size: int) -> None:
         """
-        This function does nothing, since it's a WIP!!!
+        Update weights and biases of this layer.
+
+        Parameters
+        ----------
+        `learning_rate` : float
+            Learning rate to be applied to the gradients.
+        `batch_size` : int
+            Batch size to use to average changes.
         """
-        sl.log(1, f"[Conv-{self._id}] Doing nothing", stack())
+        # Apply learning rate & batch size averaging to delta gradients
+        self._batch_filter_gradient = self._batch_filter_gradient * (learning_rate/batch_size)
+        sl.log(4, f"[Conv-{self._id}] final filter gradient = {self._batch_filter_gradient.tolist()}", stack())
+
+        # Adjust weights & biases
+        for f in range(self._n_filters):
+            self._filters[f] = self._filters[f] - self._batch_filter_gradient[f]
+            sl.log(4, f"[Conv-{self._id}] New filter {f} = {self._filters[f].tolist()}", stack())
+
+        # Reset gradients
+        self._batch_filter_gradient = np.zeros_like(self._filters)
         return
 
     def out_dim(self):
@@ -302,23 +319,29 @@ class MaxPool:
         require rewriting other functions to either 1. convert the generator to
         a true list, or 2. make use of the generator in a loop.
         """
-        slices = []
-        for row in range(0, self._in_shape[0], self._stride):
-            for col in range(0, self._in_shape[1], self._stride):
-                sl.log(4, f"[MaxPool-{self._id}] slicing on [{row}:{row+2},{col}:{col+2}]", stack())
-                slices.append(prev_activation[row:row+self._kernel_shape[0], col:col+self._kernel_shape[1]])
-        return slices
+        chunks = []
+        for row_index in range(0, self._in_shape[0], self._stride):
+            for col_index in range(0, self._in_shape[1], self._stride):
+                sl.log(4, f"[MaxPool-{self._id}] Slicing on [0:{self._in_shape[2]}, {row_index}:{row_index+self._kernel_shape[0]}, {col_index}:{col_index+self._kernel_shape[1]}]", stack())
+                chunks.append(prev_activation[0:self._in_shape[2], row_index:row_index+self._kernel_shape[0], col_index:col_index+self._kernel_shape[1]])
+        return chunks
+        # slices = []
+        # for row in range(0, self._in_shape[0], self._stride):
+        #     for col in range(0, self._in_shape[1], self._stride):
+        #         sl.log(4, f"[MaxPool-{self._id}] slicing on [{row}:{row+2},{col}:{col+2}]", stack())
+        #         slices.append(prev_activation[row:row+self._kernel_shape[0], col:col+self._kernel_shape[1]])
+        # return slices
 
     def activation(self, prev_activation: np.ndarray) -> np.ndarray:
         """
         Returns maximum value in each subslice of `prev_activation`, where subslices are determined by the kernel shape and stride.
         """
         self._last_input = prev_activation
-        slices = self._convo_slices(prev_activation)
+        chunks = self._convo_slices(prev_activation)
         output = []
 
-        for slice in slices:
-            output.append(np.amax(slice))
+        for chunk in chunks:
+            output.append(np.amax(chunk))
         self.a = np.reshape(output, self._out_shape)
         sl.log(4, f"[MaxPool-{self._id}] Activation: {self.a.tolist()}", stack())
         return self.a
@@ -347,7 +370,7 @@ class MaxPool:
             e.append(sub_e)
 
         # Final dimensionality & typing
-        e = np.reshape(e, self._in_shape)
+        e = np.reshape(e, tuple(reversed(self._in_shape)))
         sl.log(4, f"[MaxPool-{self._id}] Error: {e.tolist()}", stack())
         return e
 
@@ -388,6 +411,10 @@ class Flatten:
         """
         # Dimensionality attribute initialization
         self._in_shape = in_shape
+        if len(self._in_shape) < 3:
+            sl.log(1, f"[Flatten-{self._id}] Expanding input dimension depth to 1", stack())
+            self._in_shape = (1, *self._in_shape)
+            sl.log(1, f"[Flatten-{self._id}] New expected-in dimension: {self._in_shape}", stack())
         self._out_shape = 1
         for dim in in_shape: self._out_shape *= dim
         self._out_shape = (self._out_shape, 1)
