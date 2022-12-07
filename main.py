@@ -25,7 +25,7 @@ if __name__ == "__main__":
     # train_data, train_label = list(fold1.keys()), list(fold1.values())
     # train_data = [np.array(x).reshape(2, 1) for x in train_data] # .reshape(2, 1) on the array
     # train_label = [np.expand_dims(np.expand_dims(x, -1), -1) for x in train_label]
-    #
+
     # # Format validation data
     # test_data, test_label = list(fold2.keys()), list(fold2.values())
     # test_data = [np.array(x).reshape(2, 1) for x in test_data]
@@ -50,7 +50,6 @@ if __name__ == "__main__":
 
     # Create network
     test_network = nn.NNetwork([l.Conv(kernel_shape=(2, 2), stride=2),
-                                l.MaxPool(kernel_shape=2, stride=2),
                                 l.Flatten(),
                                 l.Dense(16, a_func=alg.sigmoid, q_a_func=alg.q_sigmoid),
                                 l.Dense(10, a_func=alg.sigmoid, q_a_func=alg.q_sigmoid)])
@@ -59,7 +58,7 @@ if __name__ == "__main__":
 
     # Train network
     # sl.log(0, str(train_data[0:10]))
-    test_network.train(x_set=train_data[0:320], y_set=train_label[0:320], batch_size=64, n_epochs=1, learning_rate=0.01)
+    test_network.train(x_set=train_data[0:320], y_set=train_label[0:320], batch_size=32, n_epochs=1, learning_rate=0.01)
 
     # Evaluate network
     for i in range(5):
@@ -69,7 +68,6 @@ if __name__ == "__main__":
     #
     # for layer in  test_network._layers:
     #     sl.log(3, f"Layer-{layer._id} w={layer._weights.tolist()} | b={layer._biases.tolist()}")
-
 
     # Build test conv layer
     # x4, for a 4x4x4 matrix
