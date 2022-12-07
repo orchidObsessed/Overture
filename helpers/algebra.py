@@ -101,6 +101,24 @@ def q_relu(x):
     x[x>1] = 1
     return x
 
+def softmax(x):
+    """
+    Softmax activation function. Using numerically stable version.
+
+    Applied element-wise to the passed NumPy ndarray.
+    """
+    exps = np.exp(x - x.max())
+    return exps / np.sum(exps)
+
+def q_softmax(x):
+    """
+    Derivative of the softmax activation function.
+
+    Applies element-wise to the passed NumPy ndarray.
+    """
+    sl.log(0, f"This function is not yet implemented!", stack())
+    raise Exception
+
 def mse(x, y):
     """
     Mean squared error loss function.
