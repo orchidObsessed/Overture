@@ -342,6 +342,7 @@ class MaxPool:
 
         for chunk in chunks:
             output.append(np.amax(chunk))
+
         self.a = np.reshape(output, self._out_shape)
         sl.log(4, f"[MaxPool-{self._id}] Activation: {self.a.tolist()}", stack())
         return self.a
