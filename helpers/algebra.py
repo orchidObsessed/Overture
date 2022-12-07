@@ -60,7 +60,8 @@ def sigmoid(x):
         warnings.filterwarnings("error")
         try: return 1 / (1 + np.exp(-x))
         except Warning as w:
-            sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
+            # sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
+            pass
     return 1 / (1 + np.exp(-x))
 
 def q_sigmoid(x):
@@ -73,7 +74,8 @@ def q_sigmoid(x):
         warnings.filterwarnings("error")
         try: return sigmoid(x) * (1 - sigmoid(x))
         except Warning as w:
-            sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
+            # sl.log(1, f"{w} with parameter x = {x} | allowing NumPy to handle silently", inspect.stack())
+            pass
     return sigmoid(x) * (1 - sigmoid(x))
 
 def relu(x):
