@@ -9,8 +9,7 @@ from neural import network as nn
 import numpy as np
 from inspect import stack
 
-# Importing Keras JUST to get the MNIST10 dataset.
-from keras.datasets import mnist
+from keras.datasets import mnist # Importing Keras JUST to get the MNIST10 dataset.
 
 sl.MAX_V_PRINT = 3 # Print everything
 sl.MAX_V_WRITE = 0 # Don't want to be writing to log for now
@@ -54,10 +53,8 @@ if __name__ == "__main__":
                                 l.Dense(16, a_func=alg.sigmoid, q_a_func=alg.q_sigmoid),
                                 l.Dense(10, a_func=alg.sigmoid, q_a_func=alg.q_sigmoid)])
     test_network.finalize((28, 28, 1))
-    # sl.log(2, f"Predicting on mnist[0] -> {train_label[0]}: {test_network.predict(train_data[0])}", stack())
 
     # Train network
-    # sl.log(0, str(train_data[0:10]))
     test_network.train(x_set=train_data[0:320], y_set=train_label[0:320], batch_size=32, n_epochs=1, learning_rate=0.01)
 
     # Evaluate network
@@ -65,13 +62,3 @@ if __name__ == "__main__":
         guess = test_network.predict(test_data[i])
         print(f"Got {guess.tolist()}, expected {test_label[i].tolist()}")
     test_network.evaluate(test_data[0:100], test_label[0:100])
-    #
-    # for layer in  test_network._layers:
-    #     sl.log(3, f"Layer-{layer._id} w={layer._weights.tolist()} | b={layer._biases.tolist()}")
-
-    # Build test conv layer
-    # x4, for a 4x4x4 matrix
-    # 1 1 2 2
-    # 1 1 2 2
-    # 3 3 4 4
-    # 3 3 4 4
