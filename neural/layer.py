@@ -86,7 +86,7 @@ class Dense:
         """
         e = np.multiply(self.qa, front_error_gradient)
         w_grad = (e @ self._prev_activation.T).T
-        self._batch_weight_gradient = self._batch_bias_gradient + w_grad
+        self._batch_weight_gradient = self._batch_weight_gradient + w_grad
         self._batch_bias_gradient = self._batch_bias_gradient + e
         sl.log(4, f"[Dense-{self._id}] Error: {e.tolist()} || Weight gradient: {w_grad.tolist()}", stack())
         return self._weights @ front_error_gradient
@@ -115,7 +115,7 @@ class Dense:
         self._batch_weight_gradient = np.zeros_like(self._batch_weight_gradient)
         return
 
-    def __len__(self):
+    def out_dim(self):
         """
         Returns the number of nodes in this layer.
         """
@@ -139,6 +139,7 @@ class Conv:
 
         # Cache attributes
         self._last_input = None # Most recent input
+        self._batch_filter_gradient = None # Batched-net filter adjustments to be used in adjust()
 
         Conv.id += 1
         return
@@ -174,6 +175,9 @@ class Conv:
         for _ in range(self._n_filters):
             self._filters.append(np.random.rand(*self._kernel_shape[0:2])) # Unpack kernel shape on-the-fly
         sl.log(4, f"[Conv-{self._id}] Built {self._n_filters} filter(s) with shape {self._filters[0].shape}", stack())
+
+        # Initialize batch gradient
+        self._batch_filter_gradient = np.zeros_like(self._filters)
 
         sl.log(4, f"[Conv-{self._id}] Expected dims: {self._expected_in} -> {self._expected_out}", stack())
         return
@@ -218,24 +222,41 @@ class Conv:
             for chunk in chunks: # A chunk is still 3d (a collection of planes
                 chunk_out = 0
                 for mat in chunk: # A mat(rix) is now a 2d, single plane
-                    sl.log(4, f"Trying to multiply {mat} with {f}")
                     chunk_out += np.multiply(mat, f).sum()
                 sl.log(1, f"[Conv-{self._id}] We still need to apply an activation function here!", stack())
                 output.append(chunk_out)
         output = np.reshape(output, (self._expected_out[2], *self._expected_out[0:2]))
         return output
 
-    def error_prop(self):
+    def backprop(self, front_error_gradient: np.ndarray) -> np.ndarray:
         """
 
         """
+        # Step 1: Regenerate output from last input
+        chunks = self._convo_chunks(self._last_input)
+
+        # Step 2: Update batched gradient - this is VERY messy
+        for r in range(self._expected_out[0]):
+            for c in range(self._expected_out[1]):
+                for chunk in chunks:
+                    for mat in chunk:
+                        for f in range(len(self._filters)):
+                            self._batch_filter_gradient[f] += front_error_gradient[f][r][c] * mat
+        sl.log(4, f"[Conv-{self._id}] New batched filter gradient: {self._batch_filter_gradient.tolist()}", stack())
+
+        # return self._weights @ front_error_gradient
+
+        return np.ones((self._expected_in[-1], *self._expected_in[0:2]))
+
+    def adjust(self, *args, **kwargs):
+        """
+        This function does nothing, since it's a WIP!!!
+        """
+        sl.log(1, f"[Conv-{self._id}] Doing nothing", stack())
         return
 
-    def adjust(self):
-        """
-
-        """
-        return
+    def out_dim(self):
+        return self._expected_out
 
 class MaxPool:
     """
@@ -337,6 +358,9 @@ class MaxPool:
         sl.log(4, f"[MaxPool-{self._id}] Doing nothing", stack())
         return
 
+    def out_dim(self):
+        return self._out_shape
+
 class Flatten:
     """
     Non-trainable layer; covnverts true-2D input into column matrix form.
@@ -383,7 +407,7 @@ class Flatten:
         """
         Just reshapes error gradient from a column vector to correct 2D form and passes it back.
         """
-        e = np.reshape(front_error_gradient, self._in_shape)
+        e = np.reshape(front_error_gradient, (self._in_shape[2], *self._in_shape[0:2]))
         sl.log(4, f"[Flatten-{self._id}] e={e.tolist()}", stack())
         return e
 
@@ -394,7 +418,7 @@ class Flatten:
         sl.log(4, f"[Flatten-{self._id}] doing nothing", stack())
         return
 
-    def __len__(self):
+    def out_dim(self):
         """
         Returns the column-length of this layer's output.
         """
