@@ -172,8 +172,8 @@ class Conv:
         self._kernel_shape.append(self._expected_in[-1]) # Expand filter to full depth of input
         self._kernel_shape = tuple(self._kernel_shape)
         for _ in range(self._n_filters):
-            self._filters.append(np.random.rand(*self._kernel_shape, self._expected_in[-1])) # Unpack kernel shape on-the-fly
-        sl.log(4, f"[Conv-{self._id}] Built {self._n_filters} filters with shape {self._kernel_shape}", stack())
+            self._filters.append(np.random.rand(*self._kernel_shape[0:2])) # Unpack kernel shape on-the-fly
+        sl.log(4, f"[Conv-{self._id}] Built {self._n_filters} filter(s) with shape {self._filters[0].shape}", stack())
 
         sl.log(4, f"[Conv-{self._id}] Expected dims: {self._expected_in} -> {self._expected_out}", stack())
         return
@@ -194,11 +194,36 @@ class Conv:
                 chunks.append(prev_activation[0:self._expected_in[2], row_index:row_index+self._kernel_shape[0], col_index:col_index+self._kernel_shape[1]])
         return chunks
 
-    def activation(self):
+    def activation(self, prev_activation: np.ndarray) -> np.ndarray:
         """
         Calculate, return & cache the activation for this layer.
+
+        Parameters
+        ----------
+        `prev_activation` np.ndarray
+            Previous activation, as either a plane or stack of planes.
         """
-        return
+        # Step 1: Validate shape, this should catch most errors.
+        if prev_activation.shape[1:3] != self._expected_in[0:2]:
+            sl.log(1, f"[Conv-{self._id}] Expected (row, col) diensions {self._expected_in[0:2]}, got {prev_activation.shape[1:3]}", stack())
+
+        # Step 2: Get all chunks for this input
+        self._last_input = prev_activation # Cache this for eventual backprop
+        chunks = self._convo_chunks(prev_activation)
+
+        # Step 3: Build output
+        # output = np.zeros((self._expected_out[2], *self._expected_out[0:2]))
+        output = [] # can we reshape it to match the above?
+        for f in self._filters: # For each filter
+            for chunk in chunks: # A chunk is still 3d (a collection of planes
+                chunk_out = 0
+                for mat in chunk: # A mat(rix) is now a 2d, single plane
+                    sl.log(4, f"Trying to multiply {mat} with {f}")
+                    chunk_out += np.multiply(mat, f).sum()
+                sl.log(1, f"[Conv-{self._id}] We still need to apply an activation function here!", stack())
+                output.append(chunk_out)
+        output = np.reshape(output, (self._expected_out[2], *self._expected_out[0:2]))
+        return output
 
     def error_prop(self):
         """
