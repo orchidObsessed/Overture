@@ -7,6 +7,10 @@ from helpers import algebra as alg
 from neural import layer as l
 from neural import network as nn
 import numpy as np
+from inspect import stack
+
+# Importing Keras JUST to get the MNIST10 dataset.
+from keras.datasets import mnist
 
 sl.MAX_V_PRINT = 4 # Print everything
 sl.MAX_V_WRITE = 0 # Don't want to be writing to log for now
@@ -16,24 +20,30 @@ sl.MAX_V_WRITE = 0 # Don't want to be writing to log for now
 
 # ===== < MAIN > =====
 if __name__ == "__main__":
-    # Read and format test data
-    fold1, fold2, fold3 = datagen.collectData("d3&c25&s200")
-    train_data, train_label = list(fold1.keys()), list(fold1.values())
-    train_data = [np.array(x).reshape(2, 1) for x in train_data] # .reshape(2, 1) on the array
-    train_label = [np.expand_dims(np.expand_dims(x, -1), -1) for x in train_label]
+    # # Read and format test data
+    # fold1, fold2, fold3 = datagen.collectData("d3&c25&s200")
+    # train_data, train_label = list(fold1.keys()), list(fold1.values())
+    # train_data = [np.array(x).reshape(2, 1) for x in train_data] # .reshape(2, 1) on the array
+    # train_label = [np.expand_dims(np.expand_dims(x, -1), -1) for x in train_label]
+    #
+    # # Format validation data
+    # test_data, test_label = list(fold2.keys()), list(fold2.values())
+    # test_data = [np.array(x).reshape(2, 1) for x in test_data]
+    # test_label = [np.expand_dims(np.expand_dims(x, -1), -1) for x in test_label]
 
-    # Format validation data
-    test_data, test_label = list(fold2.keys()), list(fold2.values())
-    test_data = [np.array(x).reshape(2, 1) for x in test_data]
-    test_label = [np.expand_dims(np.expand_dims(x, -1), -1) for x in test_label]
+    (train_data, train_label), (test_data, test_label) = mnist.load_data()
+    train_data, train_label = list(np.expand_dims(train_data, 0)), list(np.expand_dims(train_label, 0))
 
     # Create network
-    # test_network = nn.NNetwork([l.Dense(2),
-    #                             l.Dense(1, a_func=alg.sigmoid, q_a_func=alg.q_sigmoid)])
-    # test_network.finalize((2,))
+    test_network = nn.NNetwork([l.Conv(kernel_shape=(2, 2), stride=2),
+                                l.Flatten(),
+                                l.Dense(2),
+                                l.Dense(10, a_func=alg.sigmoid, q_a_func=alg.q_sigmoid)])
+    test_network.finalize((28, 28, 1))
+    # sl.log(2, f"Predicting with mnist10[0] yields {test_network.predict(train_data[0])}", stack())
 
     # Train network
-    # test_network.train(x_set=train_data, y_set=train_label, batch_size=1, n_epochs=3, learning_rate=0.001)
+    test_network.train(x_set=train_data[0:10], y_set=train_label[0:10], batch_size=1, n_epochs=1, learning_rate=0.001)
 
     # Evaluate network
     # higuess = test_network.predict(test_data[0])
@@ -52,28 +62,3 @@ if __name__ == "__main__":
     # 1 1 2 2
     # 3 3 4 4
     # 3 3 4 4
-    tensor = np.array([[[1, 1, 2, 2],
-                        [1, 1, 2, 2],
-                        [3, 3, 4, 4],
-                        [3, 3, 4, 4]],
-
-                       [[1, 1, 2, 2],
-                        [1, 1, 2, 2],
-                        [3, 3, 4, 4],
-                        [3, 3, 4, 4]],
-
-                       [[1, 1, 2, 2],
-                        [1, 1, 2, 2],
-                        [3, 3, 4, 4],
-                        [3, 3, 4, 4]],
-
-                       [[1, 1, 2, 2],
-                        [1, 1, 2, 2],
-                        [3, 3, 4, 4],
-                        [3, 3, 4, 4]]])
-    # for m in tensor: 2D MATRIX
-    # for s in m     : 1D ARRAY
-
-    cl = l.Conv(kernel_shape=(2, 2), n_filters=1, stride=2)
-    cl.finalize((4, 4, 4))
-    sl.log(2, str(cl.activation(tensor)))
